@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Anvil", "Anvil\Anvil.csproj", "{71687097-EB72-4AA7-99A2-7B7149BC23CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnvilTests", "AnvilTests\AnvilTests.csproj", "{4D4E4B25-8393-4BF6-BFC0-13ACE202A459}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{71687097-EB72-4AA7-99A2-7B7149BC23CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71687097-EB72-4AA7-99A2-7B7149BC23CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71687097-EB72-4AA7-99A2-7B7149BC23CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71687097-EB72-4AA7-99A2-7B7149BC23CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D4E4B25-8393-4BF6-BFC0-13ACE202A459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D4E4B25-8393-4BF6-BFC0-13ACE202A459}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D4E4B25-8393-4BF6-BFC0-13ACE202A459}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D4E4B25-8393-4BF6-BFC0-13ACE202A459}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
