@@ -9,7 +9,7 @@
         <Company>useanvil.com</Company>
         <PackageTags>PDF;Anvil</PackageTags>
         <Description>.NET/C# API client for Anvil. https://www.useanvil.com/docs</Description>
-        <PackageReadmeFile>../../README.md</PackageReadmeFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <LangVersion>8</LangVersion>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
