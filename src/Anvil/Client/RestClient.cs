@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Text;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace Anvil.Client
@@ -56,7 +57,7 @@ namespace Anvil.Client
         {
             var ex = new Exception();
             var statusCode = response.StatusCode;
-            var httpErrorObject = response.Content.ReadAsStringAsync().Result;
+            var httpErrorObject = (JObject) JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result);
 
             if (statusCode == HttpStatusCode.NotFound)
             {
@@ -65,14 +66,7 @@ namespace Anvil.Client
             }
             else
             {
-                // TODO: This can potentially have more than one error... can it handle it?
-                Console.WriteLine("Error");
-                // var des = JsonSerializer.Deserialize<Payloads.Response.Error>(httpErrorObject);
-                var des = new {Name = "what"};
-                if (des != null)
-                {
-                    ex.Data.Add(des.Name, des);
-                }
+                // TODO: This can potentially have more than one error
             }
 
             return ex;
@@ -117,24 +111,16 @@ namespace Anvil.Client
         /// <returns></returns>
         public async Task<HttpResponseMessage> SendPostRequest(string uri, StringContent content)
         {
-            try
-            {
-                var response = await _httpClient.PostAsync(uri, content);
+            var response = await _httpClient.PostAsync(uri, content);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    // Failed call, so create a custom exception for this.
-                    var exc = CreateExceptionFromResponse(response);
-                }
+            // TODO: Better error handling
+            // if (!response.IsSuccessStatusCode)
+            // {
+            //     // Failed call, so create a custom exception for this.
+            //     var exc = CreateExceptionFromResponse(response);
+            // }
 
-                return response;
-            }
-            catch (Exception e)
-            {
-                // TODO: How should we handle errors? 
-                Console.WriteLine(e);
-                throw e;
-            }
+            return response;
         }
 
         private async Task<HttpResponseMessage> DoFillPdf(string templateId, Payloads.Request.FillPdf payload)

@@ -19,9 +19,10 @@ namespace Anvil.Payloads.Request
             get => _type;
             set
             {
-                if (_type != null && (_type.ToLower() == "markdown" || _type.ToLower() == "html"))
+                if (value != null && (value.ToLower() == "markdown" || value.ToLower() == "html"))
                 {
                     _type = value;
+                    return;
                 }
 
                 throw new ArgumentException("value must be either `markdown` or `html`");
