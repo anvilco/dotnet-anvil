@@ -3,12 +3,13 @@
     <PropertyGroup>
         <Authors>useanvil.com, Allan Almazan</Authors>
         <TargetFrameworks>net5.0;netstandard2.0;net461</TargetFrameworks>
-        <PackageVersion>0.1.0-alpha</PackageVersion>
+        <PackageVersion>0.1.0-alpha1</PackageVersion>
         <PackageId>Anvil</PackageId>
-        <Version>0.1.0-alpha</Version>
+        <Version>0.1.0-alpha1</Version>
         <Company>useanvil.com</Company>
         <PackageTags>PDF;Anvil</PackageTags>
         <Description>.NET/C# API client for Anvil. https://www.useanvil.com/docs</Description>
+        <PackageReadmeFile>../../README.md</PackageReadmeFile>
         <LangVersion>8</LangVersion>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -18,6 +19,7 @@
         <PackageReference Include="GraphQL.Client" Version="4.0.2"/>
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="4.0.2"/>
         <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="4.0.2"/>
+        <None Include="../../README.md" Pack="true" PackagePath="/"/>
     </ItemGroup>
 
 </Project>
