@@ -2,6 +2,8 @@
 
 [Anvil](https://useanvil.com/) API library for .NET.
 
+![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Anvil)
+
 ## Usage
 
 ### Create a client instance
