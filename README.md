@@ -9,6 +9,8 @@
 ### Create a client instance
 
 ```cs
+    using Anvil.Client;
+
     var apiKey = "API-KEY-FROM-SETTINGS";
     
     // For GraphQL-related queries
