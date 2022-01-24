@@ -2,28 +2,47 @@
 
 [Anvil](https://useanvil.com/) API library for .NET.
 
-![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Anvil)
+
+[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Anvil) ![GitHub](https://img.shields.io/github/license/anvilco/dotnet-anvil)](https://www.nuget.org/packages/Anvil/)
+
+
+## Installing 
+
+[NuGet package page](https://www.nuget.org/packages/Anvil/)
+
+Using the `dotnet` CLI:
+
+```bash
+$ dotnet add package Anvil --version 0.1.0-alpha2
+```
+
+Add as a package reference:
+```xml
+<ItemGroup>
+    <PackageReference Include="Anvil" Version="0.1.0-alpha2" />
+</ItemGroup>
+```
 
 ## Usage
 
 ### Create a client instance
 
 ```cs
-    using Anvil.Client;
+using Anvil.Client;
 
-    var apiKey = "API-KEY-FROM-SETTINGS";
-    
-    // For GraphQL-related queries
-    var client = new GraphQLClient(apiKey);
-    
-    // If you are looking to use the PDF fill or PDF generate endpoints
-    // use the REST Client.
-    var restClient = new RestClient(apiKey);
+var apiKey = "API-KEY-FROM-SETTINGS";
+
+// For GraphQL-related queries
+var client = new GraphQLClient(apiKey);
+
+// If you are looking to use the PDF fill or PDF generate endpoints
+// use the REST Client.
+var restClient = new RestClient(apiKey);
 ```
 
 ### Example usage
 
-Also so the example in the `examples/` directory.
+Also see [the example in the `examples/` directory](./examples/Example.cs).
 
 ```cs
 using Anvil.Client;
