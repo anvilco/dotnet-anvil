@@ -138,25 +138,13 @@ namespace Anvil.Client
             return await response.Content.ReadAsStreamAsync();
         }
 
-        public async Task<bool> FillPdf(string templateId, Payloads.Request.FillPdf payload, string outPath)
+        public async Task<bool> FillPdf(string templateId, Payloads.Request.FillPdf payload, string destFile)
         {
             var stream = await FillPdf(templateId, payload);
 
-            // TODO: Finalize file output
-            var filePath = new DirectoryInfo(outPath);
-            // if (!filePath.Exists)
-            // {
-            //     Console.WriteLine("DOES NOT EXIST");
-            //     return false;
-            // }
-
-            var currentDir = Directory.GetCurrentDirectory();
-            var outFilename = $"{DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString()}.pdf";
-            var fullOutpath = new[] {currentDir, outFilename};
-
-            using (FileStream outputFileStream = new FileStream(Path.Combine(fullOutpath), FileMode.Create))
+            using (FileStream outputFileStream = new FileStream(destFile, FileMode.Create))
             {
-                stream.CopyTo(outputFileStream);
+                await stream.CopyToAsync(outputFileStream);
             }
 
             return true;
