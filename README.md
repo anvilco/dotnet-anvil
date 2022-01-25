@@ -94,6 +94,7 @@ class Program
 - [GraphQLClient.GetEtchPacket](#graphqlclientgetetchpacket)
 - [GraphQLClient.GetEtchSignUrl](#graphqlclientgetetchsignurl)
 - [GraphQLClient.DownloadDocuments](#graphqlclientgetetchsignurl)
+- [GraphQLClient.SendQuery](#graphqlclientsendquery)
 
 //downloadDocuments(documentGroupEid[, options])
 //requestGraphQL(queryInfo[, options])
@@ -266,7 +267,7 @@ var data = await client.GenerateEtchSignUrl(signerEid, clientUserId);
 var url = data.GenerateEtchSignUrl;
 ```
 
-### GraphQLClient.
+### GraphQLClient.SendQuery
 
 A fallback function for queries and mutations without a specialized function in this client.
 

@@ -24,7 +24,7 @@ namespace Anvil.Client
         {
             _apiKey = apiKey;
 
-            var httpOptions = new GraphQLHttpClientOptions {EndPoint = new Uri(Constants.GraphQLEndpoint)};
+            var httpOptions = new GraphQLHttpClientOptions { EndPoint = new Uri(Constants.GraphQLEndpoint) };
 
             var encodedKey = EncodeApiKey();
             var httpClient = new HttpClient();
@@ -42,11 +42,11 @@ namespace Anvil.Client
                 ContractResolver = contractResolver,
                 NullValueHandling = NullValueHandling.Ignore
             };
-            
+
             _graphQlHttpClient = new GraphQLHttpClient(httpOptions,
                 // new SystemTextJsonSerializer(jsonSerializerOptions), httpClient);
                 new NewtonsoftJsonSerializer(jsonSerializerSettings), httpClient);
-            
+
             // If using the `System.Text.Json` serializer, we should use these options:
             //
             // var jsonSerializerOptions = new JsonSerializerOptions
@@ -101,7 +101,7 @@ namespace Anvil.Client
                     {
                         message.Append(e.Message);
                     }
-                    
+
                     throw new AnvilClientException(message.ToString());
                 }
 
@@ -142,7 +142,7 @@ namespace Anvil.Client
             var request = new GraphQLHttpRequest
             {
                 Query = query.GetFullDefaultQuery(),
-                Variables = new {Eid = etchPacketEid},
+                Variables = new { Eid = etchPacketEid },
                 OperationName = "GetEtchPacket"
             };
 
@@ -168,7 +168,7 @@ namespace Anvil.Client
             var request = new GraphQLHttpRequest
             {
                 Query = query.GetFullDefaultQuery(),
-                Variables = new {signerEid, clientUserId},
+                Variables = new { signerEid, clientUserId },
                 OperationName = "GenerateEtchSignURL"
             };
 
@@ -187,7 +187,9 @@ namespace Anvil.Client
             var query = new Queries.ForgeSubmit();
             var request = new GraphQLHttpRequest
             {
-                Query = query.GetFullDefaultQuery(), Variables = requestPayload, OperationName = "ForgeSubmit"
+                Query = query.GetFullDefaultQuery(),
+                Variables = requestPayload,
+                OperationName = "ForgeSubmit"
             };
 
             return await SendQuery<Payloads.Response.ForgeSubmitPayload>(request);
@@ -199,7 +201,7 @@ namespace Anvil.Client
             var request = new GraphQLHttpRequest
             {
                 Query = query.GetFullDefaultQuery(),
-                Variables = new Dictionary<string, string> {{"eid", weldEid}},
+                Variables = new Dictionary<string, string> { { "eid", weldEid } },
                 OperationName = "RemoveWeldData"
             };
 
@@ -215,7 +217,7 @@ namespace Anvil.Client
         public async Task<Payloads.Response.CurrentUserPayload> GetCurrentUser()
         {
             var query = new Queries.CurrentUser();
-            var request = new GraphQLHttpRequest {Query = query.GetFullDefaultQuery(),};
+            var request = new GraphQLHttpRequest { Query = query.GetFullDefaultQuery(), };
 
             return await SendQuery<Payloads.Response.CurrentUserPayload>(request);
         }
@@ -229,7 +231,7 @@ namespace Anvil.Client
                 Variables = payload,
                 OperationName = "CreateEtchPacket"
             };
-            
+
             return await SendQuery<Payloads.Response.CreateEtchPacketPayload>(request);
         }
     }

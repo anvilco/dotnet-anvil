@@ -3,12 +3,14 @@
     <PropertyGroup>
         <Authors>useanvil.com, Allan Almazan</Authors>
         <TargetFrameworks>net5.0;netstandard2.0;net461</TargetFrameworks>
-        <PackageVersion>0.1.0-alpha2</PackageVersion>
+        <PackageVersion>0.1.0-alpha3</PackageVersion>
         <PackageId>Anvil</PackageId>
-        <Version>0.1.0-alpha2</Version>
+        <Version>0.1.0-alpha3</Version>
         <Company>useanvil.com</Company>
         <PackageTags>PDF;Anvil</PackageTags>
         <Description>.NET/C# API client for Anvil. https://www.useanvil.com/docs</Description>
+        <RepositoryUrl>https://github.com/anvilco/dotnet-anvil</RepositoryUrl>
+        <RepositoryBranch>main</RepositoryBranch>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>images/icon.png</PackageIcon>
         <LangVersion>8</LangVersion>
