@@ -28,7 +28,7 @@ namespace Anvil.Client
             httpClient.DefaultRequestHeaders.Accept.Clear();
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _httpClient = httpClient;
-            
+
             // Default all JSON serialization to be `camelCase`. 
             // Classes representing payload data uses the typical `PascalCase`
             // C# standard and this is what we almost always want.
@@ -42,7 +42,7 @@ namespace Anvil.Client
                 ContractResolver = contractResolver,
                 NullValueHandling = NullValueHandling.Ignore
             };
-            
+
             // If using the `System.Text.Json` serializer, we should use these options:
             //
             // _jsonSerializerOptions = new JsonSerializerOptions()
@@ -55,9 +55,17 @@ namespace Anvil.Client
 
         private Exception CreateExceptionFromResponse(HttpResponseMessage response)
         {
-            var ex = new Exception();
             var statusCode = response.StatusCode;
-            var httpErrorObject = (JObject) JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result);
+            var httpErrorReponse = (JObject)JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result);
+            var ex = new AnvilClientException($"Error: {statusCode}");
+            var errors = httpErrorReponse["errors"];
+            var count = 1;
+
+            foreach (JObject item in errors)
+            {
+                ex.Data.Add($"Message{count}", item["message"]);
+                count += 1;
+            }
 
             if (statusCode == HttpStatusCode.NotFound)
             {
@@ -114,11 +122,12 @@ namespace Anvil.Client
             var response = await _httpClient.PostAsync(uri, content);
 
             // TODO: Better error handling
-            // if (!response.IsSuccessStatusCode)
-            // {
-            //     // Failed call, so create a custom exception for this.
-            //     var exc = CreateExceptionFromResponse(response);
-            // }
+            if (!response.IsSuccessStatusCode)
+            {
+                // Failed call, so create a custom exception for this.
+                var exc = CreateExceptionFromResponse(response);
+                throw exc;
+            }
 
             return response;
         }
@@ -138,25 +147,13 @@ namespace Anvil.Client
             return await response.Content.ReadAsStreamAsync();
         }
 
-        public async Task<bool> FillPdf(string templateId, Payloads.Request.FillPdf payload, string outPath)
+        public async Task<bool> FillPdf(string templateId, Payloads.Request.FillPdf payload, string destFile)
         {
             var stream = await FillPdf(templateId, payload);
 
-            // TODO: Finalize file output
-            var filePath = new DirectoryInfo(outPath);
-            // if (!filePath.Exists)
-            // {
-            //     Console.WriteLine("DOES NOT EXIST");
-            //     return false;
-            // }
-
-            var currentDir = Directory.GetCurrentDirectory();
-            var outFilename = $"{DateTimeOffset.Now.ToUnixTimeMilliseconds().ToString()}.pdf";
-            var fullOutpath = new[] {currentDir, outFilename};
-
-            using (FileStream outputFileStream = new FileStream(Path.Combine(fullOutpath), FileMode.Create))
+            using (FileStream outputFileStream = new FileStream(destFile, FileMode.Create))
             {
-                stream.CopyTo(outputFileStream);
+                await stream.CopyToAsync(outputFileStream);
             }
 
             return true;
