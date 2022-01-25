@@ -96,9 +96,6 @@ class Program
 - [GraphQLClient.DownloadDocuments](#graphqlclientgetetchsignurl)
 - [GraphQLClient.SendQuery](#graphqlclientsendquery)
 
-//downloadDocuments(documentGroupEid[, options])
-//requestGraphQL(queryInfo[, options])
-
 ### RestClient.FillPdf
 
 Fills a PDF template with your JSON data.
