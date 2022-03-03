@@ -172,8 +172,10 @@ namespace AnvilExample
                 Name = "Etch packet name",
                 IsDraft = false,
                 IsTest = true,
-                SignatureEmailBody = "Email body",
-                SignatureEmailSubject = "Email subbb",
+                SignatureEmailBody = "These forms require informationo from your driver's license. Please have that available.",
+                SignatureEmailSubject = "Please fill this out",
+                ReplyToName = "Jane Doe",
+                ReplyToEmail = "jane@example.com",
                 Signers = signers.ToArray(),
                 Files = files.ToArray(),
             };
