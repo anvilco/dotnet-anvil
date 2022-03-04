@@ -13,6 +13,8 @@ namespace Anvil.Payloads.Request
         public string? SignatureEmailSubject { get; set; }
         public string? SignatureEmailBody { get; set; }
         public object? SignaturePageOptions { get; set; }
+        public string? ReplyToName { get; set; }
+        public string? ReplyToEmail { get; set; }
 
         public EtchSigner[]? Signers { get; set; }
         public object? Data { get; set; }

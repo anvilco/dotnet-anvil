@@ -12,6 +12,8 @@ namespace Anvil.Queries
                 $signatureEmailBody: String,
                 $signatureProvider: String,
                 $signaturePageOptions: JSON,
+                $replyToName: String,
+                $replyToEmail: String,
                 $signers: [JSON!],
                 $webhookURL: String,
                 $data: JSON,
@@ -26,6 +28,8 @@ namespace Anvil.Queries
                     signatureProvider: $signatureProvider,
                     signaturePageOptions: $signaturePageOptions,
                     signers: $signers,
+                    replyToName: $replyToName,
+                    replyToEmail: $replyToEmail,
                     webhookURL: $webhookURL,
                     data: $data
                 )
