@@ -1,5 +1,7 @@
 using System;
-using System.Text.Json.Serialization;
+
+// Required to use `JSONProperty`. We don't want the built-in .NET version.
+using Newtonsoft.Json;
 
 namespace Anvil.Payloads.Request.Types
 {
@@ -29,7 +31,7 @@ namespace Anvil.Payloads.Request.Types
         }
 
         public int? RoutingOrder { get; set; }
-        [JsonPropertyName("redirectURL")]
+        [JsonProperty("redirectURL")]
         public string? RedirectUrl { get; set; }
         public bool? AcceptEachField { get; set; }
         public string[]? EnableEmails { get; set; }
