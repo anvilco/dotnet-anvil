@@ -236,6 +236,9 @@ var payload = new Anvil.Payloads.Request.CreateEtchPacket
     SignatureEmailSubject = "Your signature is required",
     Signers = signers.ToArray(),
     Files = files.ToArray(),
+    // If you'd like all your PDFs merged into one when signing, and in the resulting zip package.
+    // Defaults to `false`.
+    // MergePdfs = true,
 };
 
 var response = await client.CreateEtchPacket(payload);
