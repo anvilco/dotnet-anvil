@@ -1,16 +1,17 @@
-using System.Text.Json.Serialization;
+// Required to use `JSONProperty`. We don't want the built-in .NET version.
+using Newtonsoft.Json;
 
 namespace Anvil.Payloads.Request.Types
 {
     public class Rect
     {
-        [JsonPropertyName("x")]
+        [JsonProperty("x")]
         public float? X { get; set; }
-        [JsonPropertyName("y")]
+        [JsonProperty("y")]
         public float? Y { get; set; }
-        [JsonPropertyName("width")]
+        [JsonProperty("width")]
         public float? Width { get; set; }
-        [JsonPropertyName("height")]
+        [JsonProperty("height")]
         public float? Height { get; set; }
     }
 }
