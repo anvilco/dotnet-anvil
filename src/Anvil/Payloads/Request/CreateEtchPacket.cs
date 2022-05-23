@@ -16,10 +16,13 @@ namespace Anvil.Payloads.Request
         public string? ReplyToName { get; set; }
         public string? ReplyToEmail { get; set; }
 
+        [JsonPropertyName("mergePDFs")]
+        public bool? MergePdfs { get; set; }
+
         public EtchSigner[]? Signers { get; set; }
         public object? Data { get; set; }
 
-        [JsonPropertyName("webhookURL")] 
+        [JsonPropertyName("webhookURL")]
         public string? WebhookUrl { get; set; }
 
     }

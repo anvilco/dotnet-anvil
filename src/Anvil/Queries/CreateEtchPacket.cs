@@ -17,12 +17,14 @@ namespace Anvil.Queries
                 $signers: [JSON!],
                 $webhookURL: String,
                 $data: JSON,
+                $mergePDFs: Boolean,
             ) {{
                 createEtchPacket (
                     name: $name,
                     files: $files,
                     isDraft: $isDraft,
                     isTest: $isTest,
+                    mergePDFs: $mergePDFs,
                     signatureEmailSubject: $signatureEmailSubject,
                     signatureEmailBody: $signatureEmailBody,
                     signatureProvider: $signatureProvider,
@@ -31,7 +33,7 @@ namespace Anvil.Queries
                     replyToName: $replyToName,
                     replyToEmail: $replyToEmail,
                     webhookURL: $webhookURL,
-                    data: $data
+                    data: $data,
                 )
                 {0}
             }}
