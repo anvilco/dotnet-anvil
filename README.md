@@ -1,13 +1,11 @@
+![Horizontal Lockupblack](https://user-images.githubusercontent.com/293079/169453889-ae211c6c-7634-4ccd-8ca9-8970c2621b6f.png#gh-light-mode-only)
+![Horizontal Lockup copywhite](https://user-images.githubusercontent.com/293079/169453892-895f637b-4633-4a14-b997-960c9e17579b.png#gh-dark-mode-only)
+
 # dotnet-anvil
 
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Anvil) ![GitHub](https://img.shields.io/github/license/anvilco/dotnet-anvil)](https://www.nuget.org/packages/Anvil/)
 
-[Anvil](https://www.useanvil.com/) API library for .NET. Anvil is a suite of tools for managing document-based workflows.
-
-**Repository maintained by [Anvil](www.useanvil.com/developers)**
-
-![Horizontal Lockupblack](https://user-images.githubusercontent.com/293079/169453889-ae211c6c-7634-4ccd-8ca9-8970c2621b6f.png#gh-light-mode-only)
-![Horizontal Lockup copywhite](https://user-images.githubusercontent.com/293079/169453892-895f637b-4633-4a14-b997-960c9e17579b.png#gh-dark-mode-only)
+This is a library that provides an interface to access the [Anvil API](https://www.useanvil.com/developers/) from applications written in .NET languages: C# etc.
 
 Anvil provides easy APIs for all things paperwork.
 1. [PDF filling API](https://www.useanvil.com/products/pdf-filling-api/) - fill out a PDF template with a web request and structured JSON data.
@@ -16,8 +14,6 @@ Anvil provides easy APIs for all things paperwork.
 4. [Anvil Workflows (w/ API)](https://www.useanvil.com/products/workflows/) - Webforms + PDF + E-sign with a powerful no-code builder. Easily collect structured data, generate PDFs, and request signatures.
 
 Learn more on our [Anvil developer page](www.useanvil.com/developers).
-
----
 
 ## Installing
 
