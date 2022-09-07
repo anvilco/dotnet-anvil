@@ -14,14 +14,14 @@
 Using the `dotnet` CLI:
 
 ```bash
-$ dotnet add package Anvil --version 0.1.0-alpha2
+$ dotnet add package Anvil --version 0.4.0
 ```
 
 Add as a package reference:
 
 ```xml
 <ItemGroup>
-    <PackageReference Include="Anvil" Version="0.1.0-alpha2" />
+    <PackageReference Include="Anvil" Version="0.4.0" />
 </ItemGroup>
 ```
 
