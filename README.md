@@ -141,6 +141,16 @@ await restClient.FillPdf("your-template-eid", payload);
 
 // This will write directly to the path you specify
 await restClient.FillPdf("your-template-eid", payload, "/tmp/file.pdf");
+
+//  A version number can also be passed in. This will retrieve a specific
+// version of the PDF to be filled if you don't want the current version
+// to be used.
+// You can also use the constant `Constants.VERSION_LATEST` to fill a PDF
+// that has not been published yet. Use this if you'd like to fill out a
+// draft version of your template/PDF.
+await restClient.FillPdf("your-template-eid", payload, 5);
+
+await restClient.FillPdf("your-template-eid", payload, "/tmp/file.pdf", 5);
 ```
 
 ### RestClient.GeneratePdf
