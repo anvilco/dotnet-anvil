@@ -23,14 +23,14 @@ Learn more on our [Anvil developer page](https://www.useanvil.com/developers/). 
 Using the `dotnet` CLI:
 
 ```bash
-$ dotnet add package Anvil --version 0.4.0
+$ dotnet add package Anvil --version 0.5.0
 ```
 
 Add as a package reference:
 
 ```xml
 <ItemGroup>
-    <PackageReference Include="Anvil" Version="0.4.0" />
+    <PackageReference Include="Anvil" Version="0.5.0" />
 </ItemGroup>
 ```
 
@@ -141,6 +141,20 @@ await restClient.FillPdf("your-template-eid", payload);
 
 // This will write directly to the path you specify
 await restClient.FillPdf("your-template-eid", payload, "/tmp/file.pdf");
+
+//  A version number can also be passed in. This will retrieve a specific
+// version of the PDF to be filled if you don't want the current version
+// to be used.
+// You can also use the constant `ClientConstants.VERSION_LATEST` to fill a PDF
+// that has not been published yet. Use this if you'd like to fill out a draft
+// version of your template/PDF.
+await restClient.FillPdf("your-template-eid", payload, ClientConstants.VERSION_LATEST);
+
+// or specify a version number
+await restClient.FillPdf("your-template-eid", payload, 5);
+
+// specify a version number with an output file path
+await restClient.FillPdf("your-template-eid", payload, "/tmp/file.pdf", 5);
 ```
 
 ### RestClient.GeneratePdf

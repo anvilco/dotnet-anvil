@@ -23,4 +23,15 @@ namespace Anvil
         // above of `/api/v1/`.
         public const string DownloadDocuments = @"/api/document-group/{0}.zip";
     }
+
+    public static class ClientConstants
+    {
+        // Used with `RestClient.FillPdf`.
+        // Version number to use for latest versions (usually drafts)
+        public const int VERSION_LATEST = -1;
+
+        // Version number to use for the latest published version.
+        // This is the default when a version is not provided.
+        public const int VERSION_LATEST_PUBLISHED = -2;
+    }
 }

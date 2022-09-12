@@ -139,6 +139,15 @@ namespace Anvil.Client
             return await SendPostRequest(uri, json);
         }
 
+        private async Task<HttpResponseMessage> DoFillPdf(string templateId, Payloads.Request.FillPdf payload,
+            int versionNumber)
+        {
+            var uri = string.Format(Constants.FillPdf, templateId);
+            uri = $"{uri}?versionNumber={versionNumber}";
+            var json = SerializePayload(payload);
+            return await SendPostRequest(uri, json);
+        }
+
         public async Task<Stream> FillPdf(string templateId, Payloads.Request.FillPdf payload)
         {
             var response = await DoFillPdf(templateId, payload);
@@ -158,6 +167,28 @@ namespace Anvil.Client
 
             return true;
         }
+
+        public async Task<Stream> FillPdf(string templateId, Payloads.Request.FillPdf payload, int versionNumber)
+        {
+            var response = await DoFillPdf(templateId, payload, versionNumber);
+
+            // response will contain the resulting PDF in bytes if it was successful.
+            return await response.Content.ReadAsStreamAsync();
+        }
+
+        public async Task<bool> FillPdf(string templateId, Payloads.Request.FillPdf payload, string destFile,
+            int versionNumber)
+        {
+            var stream = await FillPdf(templateId, payload, versionNumber);
+
+            using (FileStream outputFileStream = new FileStream(destFile, FileMode.Create))
+            {
+                await stream.CopyToAsync(outputFileStream);
+            }
+
+            return true;
+        }
+
 
         private async Task<HttpResponseMessage> DoGeneratePdf(Payloads.Request.GeneratePdf payload)
         {
