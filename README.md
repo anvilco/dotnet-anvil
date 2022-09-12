@@ -23,14 +23,14 @@ Learn more on our [Anvil developer page](https://www.useanvil.com/developers/). 
 Using the `dotnet` CLI:
 
 ```bash
-$ dotnet add package Anvil --version 0.4.0
+$ dotnet add package Anvil --version 0.5.0
 ```
 
 Add as a package reference:
 
 ```xml
 <ItemGroup>
-    <PackageReference Include="Anvil" Version="0.4.0" />
+    <PackageReference Include="Anvil" Version="0.5.0" />
 </ItemGroup>
 ```
 
