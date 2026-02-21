@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Authors>useanvil.com, Allan Almazan</Authors>
-        <TargetFrameworks>net5.0;netstandard2.0;net461</TargetFrameworks>
+        <TargetFramework>netstandard2.0</TargetFramework>
         <PackageVersion>0.5.0</PackageVersion>
         <PackageId>Anvil</PackageId>
         <Version>0.5.0</Version>
