@@ -66,7 +66,7 @@ namespace Anvil.Client
             // Copy response headers into the exception
             if (response.Headers != null)
             {
-                ex.ResponseHeaders = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                ex.ResponseHeaders = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>(System.StringComparer.OrdinalIgnoreCase);
                 foreach (var header in response.Headers)
                 {
                     ex.ResponseHeaders[header.Key] = header.Value;

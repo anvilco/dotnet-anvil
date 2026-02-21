@@ -97,7 +97,6 @@ namespace Anvil.Client
                 var response = await _graphQlHttpClient.SendQueryAsync<TResponse>(request);
                 if (response.Errors != null && response.Errors.Length > 0)
                 {
-                    var messages = new List<string>();
                     var count = 1;
                     var exc = new AnvilClientException(
                         string.Join("; ", Array.ConvertAll(response.Errors, e => e.Message))
