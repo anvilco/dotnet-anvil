@@ -123,5 +123,34 @@ namespace AnvilTests.Client
             Assert.Equal("Field 'name' is required", result.Data["Message1"]);
             Assert.Equal("Field 'email' is invalid", result.Data["Message2"]);
         }
+
+        [Fact]
+        public void WrapGraphQLException_JsonWithNoErrorsKey_FallsBackToStatusCode()
+        {
+            var jsonContent = @"{""error"":""something went wrong""}";
+            var headers = CreateResponseHeaders();
+            var ex = new GraphQLHttpRequestException(HttpStatusCode.BadRequest, headers, jsonContent);
+
+            var result = GraphQLClient.WrapGraphQLException(ex);
+
+            Assert.Equal("Error: BadRequest", result.Message);
+            Assert.Equal(HttpStatusCode.BadRequest, result.HttpStatusCode);
+            Assert.Equal(jsonContent, result.ResponseContent);
+            Assert.Empty(result.Data);
+        }
+
+        [Fact]
+        public void WrapGraphQLException_ErrorsWithNullMessages_SkipsNulls()
+        {
+            var jsonContent = @"{""errors"":[{},{""message"":""real error""},{""other"":""field""}]}";
+            var headers = CreateResponseHeaders();
+            var ex = new GraphQLHttpRequestException(HttpStatusCode.BadRequest, headers, jsonContent);
+
+            var result = GraphQLClient.WrapGraphQLException(ex);
+
+            Assert.Equal("real error", result.Message);
+            Assert.Equal(1, result.Data.Count);
+            Assert.Equal("real error", result.Data["Message1"]);
+        }
     }
 }

@@ -170,5 +170,54 @@ namespace AnvilTests.Client
             Assert.Equal("Field 'name' is required", exception.Data["Message1"]);
             Assert.Equal("Field 'email' is invalid", exception.Data["Message2"]);
         }
+
+        [Fact]
+        public void CreateExceptionFromResponse_JsonWithNoErrorsKey_DoesNotCrash()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.BadRequest);
+            var jsonContent = @"{""error"":""something unexpected""}";
+            response.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            var client = new RestClient("test-api-key");
+            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance);
+            var exception = (AnvilClientException)method.Invoke(client, new object[] { response });
+
+            Assert.NotNull(exception);
+            Assert.Equal(HttpStatusCode.BadRequest, exception.HttpStatusCode);
+            Assert.Equal(jsonContent, exception.ResponseContent);
+            Assert.Empty(exception.Data);
+        }
+
+        [Fact]
+        public void CreateExceptionFromResponse_IncludesContentHeaders()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            response.Content = new StringContent("error", Encoding.UTF8, "text/plain");
+
+            var client = new RestClient("test-api-key");
+            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance);
+            var exception = (AnvilClientException)method.Invoke(client, new object[] { response });
+
+            Assert.NotNull(exception);
+            Assert.NotNull(exception.ResponseHeaders);
+            Assert.True(exception.ResponseHeaders.ContainsKey("Content-Type"));
+        }
+
+        [Fact]
+        public void CreateExceptionFromResponse_NotFoundWithJsonErrors_DoesNotDuplicateKey()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.NotFound);
+            var jsonContent = @"{""errors"":[{""message"":""Resource not found""}]}";
+            response.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            var client = new RestClient("test-api-key");
+            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance);
+            var exception = (AnvilClientException)method.Invoke(client, new object[] { response });
+
+            Assert.NotNull(exception);
+            Assert.Equal(HttpStatusCode.NotFound, exception.HttpStatusCode);
+            Assert.Equal("Resource not found", exception.Data["Message1"]);
+            Assert.Contains("Not Found", exception.Data.Keys.Cast<string>());
+        }
     }
 }
