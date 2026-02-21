@@ -93,7 +93,8 @@ namespace Anvil.Client
                         var count = 1;
                         foreach (JObject item in errors)
                         {
-                            ex.Data.Add($"Message{count}", item["message"]);
+                            var message = item["message"];
+                            ex.Data.Add($"Message{count}", message?.ToString());
                             count += 1;
                         }
                     }
