@@ -56,25 +56,63 @@ namespace Anvil.Client
         private Exception CreateExceptionFromResponse(HttpResponseMessage response)
         {
             var statusCode = response.StatusCode;
-            var httpErrorReponse = (JObject)JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result);
-            var ex = new AnvilClientException($"Error: {statusCode}");
-            var errors = httpErrorReponse["errors"];
-            var count = 1;
-
-            foreach (JObject item in errors)
+            var responseContent = response.Content.ReadAsStringAsync().Result;
+            var ex = new AnvilClientException($"Error: {statusCode}")
             {
-                ex.Data.Add($"Message{count}", item["message"]);
-                count += 1;
+                HttpStatusCode = statusCode,
+                ResponseContent = responseContent
+            };
+
+            // Copy response headers into the exception
+            if (response.Headers != null)
+            {
+                ex.ResponseHeaders = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                foreach (var header in response.Headers)
+                {
+                    ex.ResponseHeaders[header.Key] = header.Value;
+                }
+                // Also include content headers if present
+                if (response.Content?.Headers != null)
+                {
+                    foreach (var header in response.Content.Headers)
+                    {
+                        ex.ResponseHeaders[header.Key] = header.Value;
+                    }
+                }
+            }
+
+            // Try to parse JSON error response, but handle non-JSON gracefully
+            try
+            {
+                var httpErrorReponse = (JObject)JsonConvert.DeserializeObject(responseContent);
+                if (httpErrorReponse != null)
+                {
+                    var errors = httpErrorReponse["errors"];
+                    if (errors != null)
+                    {
+                        var count = 1;
+                        foreach (JObject item in errors)
+                        {
+                            ex.Data.Add($"Message{count}", item["message"]);
+                            count += 1;
+                        }
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // Response is not JSON, which is fine for some error responses (e.g., 429 rate limits)
+                // The raw content is already captured in ResponseContent property
+                ex.Data.Add("RawContent", responseContent);
             }
 
             if (statusCode == HttpStatusCode.NotFound)
             {
                 // Doesn't return JSON for this error...
-                ex.Data.Add("Not Found", "");
-            }
-            else
-            {
-                // TODO: This can potentially have more than one error
+                if (!ex.Data.Contains("Not Found"))
+                {
+                    ex.Data.Add("Not Found", "");
+                }
             }
 
             return ex;
