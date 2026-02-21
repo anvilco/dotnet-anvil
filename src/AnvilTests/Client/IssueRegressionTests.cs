@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
@@ -110,8 +111,11 @@ namespace AnvilTests.Client
             Assert.Equal("Rate limit exceeded", exception.ResponseContent);
             
             // Consumers can now access rate limit information from the exception
-            Assert.Contains("Retry-After", exception.ResponseHeaders.Keys, StringComparer.OrdinalIgnoreCase);
-            Assert.Contains("X-RateLimit-Remaining", exception.ResponseHeaders.Keys, StringComparer.OrdinalIgnoreCase);
+            // Note: HTTP headers may be normalized (e.g., X-Request-ID vs X-Request-Id)
+            var hasRetryAfter = exception.ResponseHeaders.Keys.Any(k => k.Equals("Retry-After", StringComparison.OrdinalIgnoreCase));
+            var hasRateLimitRemaining = exception.ResponseHeaders.Keys.Any(k => k.Equals("X-RateLimit-Remaining", StringComparison.OrdinalIgnoreCase));
+            Assert.True(hasRetryAfter, "Retry-After header should be present");
+            Assert.True(hasRateLimitRemaining, "X-RateLimit-Remaining header should be present");
         }
     }
 }

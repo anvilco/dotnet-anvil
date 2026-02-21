@@ -84,10 +84,10 @@ namespace Anvil.Client
             // Try to parse JSON error response, but handle non-JSON gracefully
             try
             {
-                var httpErrorReponse = (JObject)JsonConvert.DeserializeObject(responseContent);
-                if (httpErrorReponse != null)
+                var httpErrorResponse = (JObject)JsonConvert.DeserializeObject(responseContent);
+                if (httpErrorResponse != null)
                 {
-                    var errors = httpErrorReponse["errors"];
+                    var errors = httpErrorResponse["errors"];
                     if (errors != null)
                     {
                         var count = 1;
