@@ -121,24 +121,15 @@ namespace Anvil.Client
 
         public async Task<HttpResponseMessage> SendGetRequest(string uri)
         {
-            try
-            {
-                var response = await _httpClient.GetAsync(uri);
+            var response = await _httpClient.GetAsync(uri);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    // Failed call, so create a custom exception for this.
-                    var exc = CreateExceptionFromResponse(response);
-                }
-
-                return response;
-            }
-            catch (Exception e)
+            if (!response.IsSuccessStatusCode)
             {
-                // TODO: How should we handle errors? 
-                Console.WriteLine(e);
-                throw e;
+                var exc = CreateExceptionFromResponse(response);
+                throw exc;
             }
+
+            return response;
         }
 
         private StringContent SerializePayload<T>(T payload)

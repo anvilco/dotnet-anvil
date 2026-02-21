@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -96,37 +97,83 @@ namespace Anvil.Client
                 var response = await _graphQlHttpClient.SendQueryAsync<TResponse>(request);
                 if (response.Errors != null && response.Errors.Length > 0)
                 {
-                    var message = new StringBuilder();
+                    var messages = new List<string>();
+                    var count = 1;
+                    var exc = new AnvilClientException(
+                        string.Join("; ", Array.ConvertAll(response.Errors, e => e.Message))
+                    );
                     foreach (var e in response.Errors)
                     {
-                        message.Append(e.Message);
+                        exc.Data.Add($"Message{count}", e.Message);
+                        count++;
                     }
 
-                    throw new AnvilClientException(message.ToString());
+                    throw exc;
                 }
 
                 return response.Data;
             }
             catch (GraphQLHttpRequestException ex)
             {
-                if (ex.Content != null)
+                throw WrapGraphQLException(ex);
+            }
+        }
+
+        internal static AnvilClientException WrapGraphQLException(GraphQLHttpRequestException ex)
+        {
+            var messages = new List<string>();
+
+            if (ex.Content != null)
+            {
+                try
                 {
                     var errorResponse = (JObject)JsonConvert.DeserializeObject(ex.Content);
-                    var errors = (JArray)errorResponse["errors"];
-                    var content = new StringBuilder();
-                    foreach (var e in errors)
+                    if (errorResponse != null)
                     {
-                        content.Append(e["message"]);
-                    }
-
-                    if (ex.Message.Contains("Unauthorized"))
-                    {
-                        throw new GraphQLHttpRequestException(ex.StatusCode, ex.ResponseHeaders, content.ToString());
+                        var errors = errorResponse["errors"] as JArray;
+                        if (errors != null)
+                        {
+                            foreach (var e in errors)
+                            {
+                                var msg = e["message"]?.ToString();
+                                if (msg != null) messages.Add(msg);
+                            }
+                        }
                     }
                 }
-
-                throw;
+                catch (JsonException)
+                {
+                    // Response is not JSON — raw content is captured below
+                }
             }
+
+            var message = messages.Count > 0
+                ? string.Join("; ", messages)
+                : $"Error: {ex.StatusCode}";
+
+            var anvilEx = new AnvilClientException(message, ex)
+            {
+                HttpStatusCode = ex.StatusCode,
+                ResponseContent = ex.Content
+            };
+
+            if (ex.ResponseHeaders != null)
+            {
+                anvilEx.ResponseHeaders = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
+                foreach (var header in ex.ResponseHeaders)
+                {
+                    anvilEx.ResponseHeaders[header.Key] = header.Value;
+                }
+            }
+
+            var dataCount = 1;
+            foreach (var msg in messages)
+            {
+                anvilEx.Data.Add($"Message{dataCount}", msg);
+                dataCount++;
+            }
+
+            return anvilEx;
         }
 
         /// <summary>

@@ -13,6 +13,10 @@ namespace Anvil
         public AnvilClientException(string message) : base(message)
         {
         }
+
+        public AnvilClientException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
     }
 
     public abstract class BaseClient
