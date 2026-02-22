@@ -54,10 +54,10 @@ namespace Anvil.Client
             // };
         }
 
-        private Exception CreateExceptionFromResponse(HttpResponseMessage response)
+        private async Task<Exception> CreateExceptionFromResponse(HttpResponseMessage response)
         {
             var statusCode = response.StatusCode;
-            var responseContent = response.Content.ReadAsStringAsync().Result;
+            var responseContent = await response.Content.ReadAsStringAsync();
             var ex = new AnvilClientException($"Error: {statusCode}")
             {
                 HttpStatusCode = statusCode,
@@ -126,7 +126,7 @@ namespace Anvil.Client
 
             if (!response.IsSuccessStatusCode)
             {
-                var exc = CreateExceptionFromResponse(response);
+                var exc = await CreateExceptionFromResponse(response);
                 throw exc;
             }
 
@@ -156,7 +156,7 @@ namespace Anvil.Client
             if (!response.IsSuccessStatusCode)
             {
                 // Failed call, so create a custom exception for this.
-                var exc = CreateExceptionFromResponse(response);
+                var exc = await CreateExceptionFromResponse(response);
                 throw exc;
             }
 

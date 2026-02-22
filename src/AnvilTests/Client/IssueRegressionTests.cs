@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
 using Anvil;
 using Anvil.Client;
@@ -13,16 +14,24 @@ using Xunit;
 namespace AnvilTests.Client
 {
     /// <summary>
-    /// Tests that validate the fix for the original issue: 
+    /// Tests that validate the fix for the original issue:
     /// "Client crashes on api error responses and throws JSON parsing error"
     /// </summary>
     public class IssueRegressionTests
     {
+        private static async Task<AnvilClientException> InvokeCreateExceptionFromResponse(HttpResponseMessage response)
+        {
+            var client = new RestClient("test-api-key");
+            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance);
+            var task = (Task<Exception>)method.Invoke(client, new object[] { response });
+            return (AnvilClientException)await task;
+        }
+
         [Fact]
-        public void Issue_RateLimitError_DoesNotThrowJsonParsingError()
+        public async Task Issue_RateLimitError_DoesNotThrowJsonParsingError()
         {
             // This test validates the fix for the issue where a 429 rate limit response
-            // with non-JSON content would throw a JSON parsing error instead of 
+            // with non-JSON content would throw a JSON parsing error instead of
             // properly handling the error.
 
             // Arrange: Create a 429 rate limit response like the one described in the issue
@@ -33,25 +42,11 @@ namespace AnvilTests.Client
             response.Content = new StringContent("", Encoding.UTF8, "text/plain");
 
             // Act: Call CreateExceptionFromResponse - this should NOT throw a JSON parsing error
-            var client = new RestClient("test-api-key");
-            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance);
-
-            Exception exception = null;
-            try
-            {
-                exception = (Exception)method.Invoke(client, new object[] { response });
-            }
-            catch (Exception ex)
-            {
-                // If we get here, the method threw an exception (like JsonException)
-                Assert.True(false, $"CreateExceptionFromResponse threw an exception: {ex.InnerException?.GetType().Name} - {ex.InnerException?.Message}");
-            }
+            var anvilException = await InvokeCreateExceptionFromResponse(response);
 
             // Assert: The exception should be created successfully
-            Assert.NotNull(exception);
-            Assert.IsType<AnvilClientException>(exception);
-
-            var anvilException = (AnvilClientException)exception;
+            Assert.NotNull(anvilException);
+            Assert.IsType<AnvilClientException>(anvilException);
 
             // Verify the exception contains the useful information mentioned in the suggested fix
             Assert.Equal(HttpStatusCode.TooManyRequests, anvilException.HttpStatusCode);
@@ -83,7 +78,7 @@ namespace AnvilTests.Client
         }
 
         [Fact]
-        public void Issue_AfterFix_ExceptionContainsAllUsefulProperties()
+        public async Task Issue_AfterFix_ExceptionContainsAllUsefulProperties()
         {
             // This test validates that the AnvilClientException now contains
             // all the useful properties mentioned in the suggested fix:
@@ -98,9 +93,7 @@ namespace AnvilTests.Client
             response.Content = new StringContent("Rate limit exceeded", Encoding.UTF8, "text/plain");
 
             // Act: Create exception from response
-            var client = new RestClient("test-api-key");
-            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance);
-            var exception = (AnvilClientException)method.Invoke(client, new object[] { response });
+            var exception = await InvokeCreateExceptionFromResponse(response);
 
             // Assert: All suggested properties are present and accessible
             Assert.NotNull(exception.HttpStatusCode);
