@@ -4,9 +4,12 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+
 using Anvil;
 using Anvil.Client;
+
 using GraphQL.Client.Http;
+
 using Xunit;
 
 namespace AnvilTests.Client

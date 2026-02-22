@@ -7,8 +7,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Anvil;
 using Anvil.Client;
+
 using Xunit;
 
 namespace AnvilTests.Client
@@ -144,8 +146,8 @@ namespace AnvilTests.Client
             // HTTP headers are case-insensitive, so check with the normalized key
             var hasRequestId = exception.ResponseHeaders.ContainsKey("X-Request-Id") || exception.ResponseHeaders.ContainsKey("X-Request-ID");
             Assert.True(hasRequestId, "X-Request-Id header should be present");
-            var requestIdValues = exception.ResponseHeaders.ContainsKey("X-Request-Id") 
-                ? exception.ResponseHeaders["X-Request-Id"] 
+            var requestIdValues = exception.ResponseHeaders.ContainsKey("X-Request-Id")
+                ? exception.ResponseHeaders["X-Request-Id"]
                 : exception.ResponseHeaders["X-Request-ID"];
             Assert.Equal("12345", requestIdValues.First());
         }

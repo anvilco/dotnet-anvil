@@ -8,7 +8,7 @@ namespace Anvil.Payloads.Request.Types
     public class EtchSigner
     {
         private string _signerType = "email";
-        
+
         public string? Id { get; set; }
         public string? Name { get; set; }
         public string? Email { get; set; }
