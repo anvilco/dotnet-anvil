@@ -17,9 +17,10 @@ using Newtonsoft.Json.Serialization;
 
 namespace Anvil.Client
 {
-    public class GraphQLClient : BaseClient
+    public class GraphQLClient : BaseClient, IDisposable
     {
         private readonly GraphQLHttpClient _graphQlHttpClient;
+        private bool _disposed;
 
         public GraphQLClient(string apiKey)
         {
@@ -126,7 +127,7 @@ namespace Anvil.Client
             {
                 try
                 {
-                    var errorResponse = (JObject)JsonConvert.DeserializeObject(ex.Content);
+                    var errorResponse = JsonConvert.DeserializeObject(ex.Content) as JObject;
                     if (errorResponse != null)
                     {
                         var errors = errorResponse["errors"] as JArray;
@@ -279,6 +280,15 @@ namespace Anvil.Client
             };
 
             return await SendQuery<Payloads.Response.CreateEtchPacketPayload>(request);
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _graphQlHttpClient.Dispose();
+                _disposed = true;
+            }
         }
     }
 }

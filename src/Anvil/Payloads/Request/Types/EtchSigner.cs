@@ -19,7 +19,7 @@ namespace Anvil.Payloads.Request.Types
             get => _signerType;
             set
             {
-                if (value.ToLower() == "email" || value.ToLower() == "embedded")
+                if (value != null && (value.ToLower() == "email" || value.ToLower() == "embedded"))
                 {
                     _signerType = value;
                 }

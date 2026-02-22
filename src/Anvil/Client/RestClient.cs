@@ -12,10 +12,11 @@ using Newtonsoft.Json.Serialization;
 
 namespace Anvil.Client
 {
-    public class RestClient : BaseClient
+    public class RestClient : BaseClient, IDisposable
     {
         private readonly HttpClient _httpClient;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
+        private bool _disposed;
 
         public RestClient(string apiKey)
         {
@@ -84,17 +85,17 @@ namespace Anvil.Client
             // Try to parse JSON error response, but handle non-JSON gracefully
             try
             {
-                var httpErrorResponse = (JObject)JsonConvert.DeserializeObject(responseContent);
+                var httpErrorResponse = JsonConvert.DeserializeObject(responseContent) as JObject;
                 if (httpErrorResponse != null)
                 {
-                    var errors = httpErrorResponse["errors"];
+                    var errors = httpErrorResponse["errors"] as JArray;
                     if (errors != null)
                     {
                         var count = 1;
-                        foreach (JObject item in errors)
+                        foreach (var item in errors)
                         {
-                            var message = item["message"];
-                            ex.Data.Add($"Message{count}", message?.ToString());
+                            var message = item["message"]?.ToString();
+                            ex.Data.Add($"Message{count}", message);
                             count += 1;
                         }
                     }
@@ -259,6 +260,15 @@ namespace Anvil.Client
             var stream = await SendGetRequest(uri);
 
             return await stream.Content.ReadAsStreamAsync();
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _httpClient.Dispose();
+                _disposed = true;
+            }
         }
     }
 }

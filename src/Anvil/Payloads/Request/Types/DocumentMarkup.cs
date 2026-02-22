@@ -4,7 +4,7 @@ namespace Anvil.Payloads.Request.Types
 {
     public class HtmlCssMarkup
     {
-        public string Html { get; set; }
+        public string? Html { get; set; }
         public string? Css { get; set; }
     }
 
@@ -12,7 +12,7 @@ namespace Anvil.Payloads.Request.Types
     {
         public string? Id { get; set; }
         public string? Filename { get; set; }
-        public HtmlCssMarkup Markup { get; set; }
+        public HtmlCssMarkup? Markup { get; set; }
         public List<SignatureField>? Fields { get; set; }
         public string? Title { get; set; }
         public int? FontSize { get; set; }
