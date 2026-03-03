@@ -1,7 +1,7 @@
 // Required to use `JSONProperty`. We don't want the built-in .NET version.
-using Newtonsoft.Json;
-
 using Anvil.Payloads.Request.Types;
+
+using Newtonsoft.Json;
 
 namespace Anvil.Payloads.Request
 {

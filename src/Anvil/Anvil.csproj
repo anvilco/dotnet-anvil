@@ -2,10 +2,10 @@
 
     <PropertyGroup>
         <Authors>useanvil.com, Allan Almazan</Authors>
-        <TargetFrameworks>net5.0;netstandard2.0;net461</TargetFrameworks>
-        <PackageVersion>0.5.0</PackageVersion>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <PackageVersion>0.6.0</PackageVersion>
         <PackageId>Anvil</PackageId>
-        <Version>0.5.0</Version>
+        <Version>0.6.0</Version>
         <Company>useanvil.com</Company>
         <PackageTags>PDF;Anvil</PackageTags>
         <Description>.NET/C# API client for Anvil. https://www.useanvil.com/docs</Description>
@@ -19,9 +19,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="AnvilTests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="GraphQL.Client" Version="4.0.2" />
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="4.0.2" />
         <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="4.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <None Include="../../README.md" Pack="true" PackagePath="/" />
         <None Include="../../images/icon.png" Pack="true" PackagePath="/images" />
     </ItemGroup>

@@ -2,18 +2,18 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
-using Xunit;
-
 using Anvil.Client;
 using Anvil.Payloads;
 
 using Moq;
 
+using Xunit;
+
 namespace AnvilTests.Client
 {
     public class RestClientTests
     {
-        private RestClient _client;
+        private readonly RestClient _client;
 
         public RestClientTests()
         {

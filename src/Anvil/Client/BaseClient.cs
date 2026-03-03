@@ -1,10 +1,20 @@
 using System;
+using System.Collections.Generic;
+using System.Net;
 
 namespace Anvil
 {
     public class AnvilClientException : Exception
     {
+        public HttpStatusCode? HttpStatusCode { get; set; }
+        public Dictionary<string, IEnumerable<string>>? ResponseHeaders { get; set; }
+        public string? ResponseContent { get; set; }
+
         public AnvilClientException(string message) : base(message)
+        {
+        }
+
+        public AnvilClientException(string message, Exception innerException) : base(message, innerException)
         {
         }
     }

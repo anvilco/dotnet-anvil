@@ -9,6 +9,6 @@ namespace Anvil.Payloads.Request.Types
         public bool? FirstRowHeaders { get; set; }
         public bool? RowGridlines { get; set; }
         public bool? ColumnGridlines { get; set; }
-        public string? VerticalAlign { get; set; }        
+        public string? VerticalAlign { get; set; }
     }
 }

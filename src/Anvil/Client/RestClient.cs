@@ -1,10 +1,10 @@
 using System;
 using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading.Tasks;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -12,10 +12,11 @@ using Newtonsoft.Json.Serialization;
 
 namespace Anvil.Client
 {
-    public class RestClient : BaseClient
+    public class RestClient : BaseClient, IDisposable
     {
         private readonly HttpClient _httpClient;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
+        private bool _disposed;
 
         public RestClient(string apiKey)
         {
@@ -53,28 +54,70 @@ namespace Anvil.Client
             // };
         }
 
-        private Exception CreateExceptionFromResponse(HttpResponseMessage response)
+        private async Task<Exception> CreateExceptionFromResponse(HttpResponseMessage response)
         {
             var statusCode = response.StatusCode;
-            var httpErrorReponse = (JObject)JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result);
-            var ex = new AnvilClientException($"Error: {statusCode}");
-            var errors = httpErrorReponse["errors"];
-            var count = 1;
-
-            foreach (JObject item in errors)
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var ex = new AnvilClientException($"Error: {statusCode}")
             {
-                ex.Data.Add($"Message{count}", item["message"]);
-                count += 1;
+                HttpStatusCode = statusCode,
+                ResponseContent = responseContent
+            };
+
+            // Copy response headers into the exception
+            if (response.Headers != null)
+            {
+                ex.ResponseHeaders = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>(System.StringComparer.OrdinalIgnoreCase);
+                foreach (var header in response.Headers)
+                {
+                    ex.ResponseHeaders[header.Key] = header.Value;
+                }
+                // Also include content headers if present
+                if (response.Content?.Headers != null)
+                {
+                    foreach (var header in response.Content.Headers)
+                    {
+                        ex.ResponseHeaders[header.Key] = header.Value;
+                    }
+                }
+            }
+
+            // Try to parse JSON error response, but handle non-JSON gracefully
+            try
+            {
+                var httpErrorResponse = JsonConvert.DeserializeObject(responseContent) as JObject;
+                if (httpErrorResponse != null)
+                {
+                    var errors = httpErrorResponse["errors"] as JArray;
+                    if (errors != null)
+                    {
+                        var count = 1;
+                        foreach (var item in errors)
+                        {
+                            var message = item["message"]?.ToString();
+                            if (message != null)
+                            {
+                                ex.Data.Add($"Message{count}", message);
+                                count += 1;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (JsonException)
+            {
+                // Response is not JSON, which is fine for some error responses (e.g., 429 rate limits)
+                // The raw content is already captured in ResponseContent property
+                ex.Data.Add("RawContent", responseContent);
             }
 
             if (statusCode == HttpStatusCode.NotFound)
             {
                 // Doesn't return JSON for this error...
-                ex.Data.Add("Not Found", "");
-            }
-            else
-            {
-                // TODO: This can potentially have more than one error
+                if (!ex.Data.Contains("Not Found"))
+                {
+                    ex.Data.Add("Not Found", "");
+                }
             }
 
             return ex;
@@ -82,24 +125,15 @@ namespace Anvil.Client
 
         public async Task<HttpResponseMessage> SendGetRequest(string uri)
         {
-            try
-            {
-                var response = await _httpClient.GetAsync(uri);
+            var response = await _httpClient.GetAsync(uri);
 
-                if (!response.IsSuccessStatusCode)
-                {
-                    // Failed call, so create a custom exception for this.
-                    var exc = CreateExceptionFromResponse(response);
-                }
-
-                return response;
-            }
-            catch (Exception e)
+            if (!response.IsSuccessStatusCode)
             {
-                // TODO: How should we handle errors? 
-                Console.WriteLine(e);
-                throw e;
+                var exc = await CreateExceptionFromResponse(response);
+                throw exc;
             }
+
+            return response;
         }
 
         private StringContent SerializePayload<T>(T payload)
@@ -125,7 +159,7 @@ namespace Anvil.Client
             if (!response.IsSuccessStatusCode)
             {
                 // Failed call, so create a custom exception for this.
-                var exc = CreateExceptionFromResponse(response);
+                var exc = await CreateExceptionFromResponse(response);
                 throw exc;
             }
 
@@ -229,6 +263,15 @@ namespace Anvil.Client
             var stream = await SendGetRequest(uri);
 
             return await stream.Content.ReadAsStreamAsync();
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _httpClient.Dispose();
+                _disposed = true;
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
-using Xunit;
-
 using Anvil;
+
+using Xunit;
 
 namespace AnvilTests.Client
 {
