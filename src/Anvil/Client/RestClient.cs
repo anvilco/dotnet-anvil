@@ -95,8 +95,11 @@ namespace Anvil.Client
                         foreach (var item in errors)
                         {
                             var message = item["message"]?.ToString();
-                            ex.Data.Add($"Message{count}", message);
-                            count += 1;
+                            if (message != null)
+                            {
+                                ex.Data.Add($"Message{count}", message);
+                                count += 1;
+                            }
                         }
                     }
                 }

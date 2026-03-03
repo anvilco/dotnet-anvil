@@ -26,6 +26,7 @@
         <PackageReference Include="GraphQL.Client" Version="4.0.2" />
         <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="4.0.2" />
         <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="4.0.2" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <None Include="../../README.md" Pack="true" PackagePath="/" />
         <None Include="../../images/icon.png" Pack="true" PackagePath="/images" />
     </ItemGroup>

@@ -91,7 +91,7 @@ namespace AnvilTests.Client
             var result = GraphQLClient.WrapGraphQLException(ex);
 
             Assert.NotNull(result.ResponseHeaders);
-            Assert.True(result.ResponseHeaders.ContainsKey("X-Request-Id"));
+            Assert.True(result.ResponseHeaders!.ContainsKey("X-Request-Id"));
             Assert.Equal("abc-123", result.ResponseHeaders["X-Request-Id"].First());
             Assert.True(result.ResponseHeaders.ContainsKey("X-RateLimit-Remaining"));
             Assert.Equal("0", result.ResponseHeaders["X-RateLimit-Remaining"].First());

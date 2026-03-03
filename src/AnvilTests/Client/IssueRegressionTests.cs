@@ -22,8 +22,9 @@ namespace AnvilTests.Client
         private static async Task<AnvilClientException> InvokeCreateExceptionFromResponse(HttpResponseMessage response)
         {
             var client = new RestClient("test-api-key");
-            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance);
-            var task = (Task<Exception>)method.Invoke(client, new object[] { response });
+            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?? throw new InvalidOperationException("CreateExceptionFromResponse method not found");
+            var task = (Task<Exception>)method.Invoke(client, new object[] { response })!;
             return (AnvilClientException)await task;
         }
 
@@ -53,7 +54,7 @@ namespace AnvilTests.Client
             Assert.NotNull(anvilException.ResponseHeaders);
 
             // Verify Retry-After header is accessible (case-insensitive check due to HTTP header normalization)
-            var hasRetryAfter = anvilException.ResponseHeaders.ContainsKey("Retry-After")
+            var hasRetryAfter = anvilException.ResponseHeaders!.ContainsKey("Retry-After")
                 || anvilException.ResponseHeaders.ContainsKey("Retry-after");
             Assert.True(hasRetryAfter, "Retry-After header should be accessible");
 
@@ -97,10 +98,10 @@ namespace AnvilTests.Client
 
             // Assert: All suggested properties are present and accessible
             Assert.NotNull(exception.HttpStatusCode);
-            Assert.Equal(HttpStatusCode.TooManyRequests, exception.HttpStatusCode.Value);
+            Assert.Equal(HttpStatusCode.TooManyRequests, exception.HttpStatusCode!.Value);
 
             Assert.NotNull(exception.ResponseHeaders);
-            Assert.True(exception.ResponseHeaders.Count > 0);
+            Assert.True(exception.ResponseHeaders!.Count > 0);
 
             Assert.NotNull(exception.ResponseContent);
             Assert.Equal("Rate limit exceeded", exception.ResponseContent);

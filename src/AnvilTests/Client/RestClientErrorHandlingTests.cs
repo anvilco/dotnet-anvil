@@ -24,8 +24,9 @@ namespace AnvilTests.Client
         private static async Task<AnvilClientException> InvokeCreateExceptionFromResponse(HttpResponseMessage response)
         {
             var client = new RestClient("test-api-key");
-            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance);
-            var task = (Task<Exception>)method.Invoke(client, new object[] { response });
+            var method = typeof(RestClient).GetMethod("CreateExceptionFromResponse", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?? throw new InvalidOperationException("CreateExceptionFromResponse method not found");
+            var task = (Task<Exception>)method.Invoke(client, new object[] { response })!;
             return (AnvilClientException)await task;
         }
 
@@ -44,8 +45,8 @@ namespace AnvilTests.Client
             Assert.NotNull(exception);
             Assert.Equal(HttpStatusCode.TooManyRequests, exception.HttpStatusCode);
             Assert.NotNull(exception.ResponseHeaders);
-            Assert.True(exception.ResponseHeaders.ContainsKey("Retry-After"));
-            Assert.Equal("5", exception.ResponseHeaders["Retry-After"].First());
+            Assert.True(exception.ResponseHeaders!.ContainsKey("Retry-After"));
+            Assert.Equal("5", exception.ResponseHeaders!["Retry-After"].First());
             Assert.NotNull(exception.ResponseContent);
             Assert.Contains("Rate limit exceeded", exception.ResponseContent);
             Assert.Equal("Error: TooManyRequests", exception.Message);
@@ -140,7 +141,7 @@ namespace AnvilTests.Client
             Assert.NotNull(exception);
             Assert.NotNull(exception.ResponseHeaders);
             // HTTP headers are case-insensitive, so check with the normalized key
-            var hasRequestId = exception.ResponseHeaders.ContainsKey("X-Request-Id") || exception.ResponseHeaders.ContainsKey("X-Request-ID");
+            var hasRequestId = exception.ResponseHeaders!.ContainsKey("X-Request-Id") || exception.ResponseHeaders.ContainsKey("X-Request-ID");
             Assert.True(hasRequestId, "X-Request-Id header should be present");
             var requestIdValues = exception.ResponseHeaders.ContainsKey("X-Request-Id")
                 ? exception.ResponseHeaders["X-Request-Id"]
@@ -192,7 +193,7 @@ namespace AnvilTests.Client
 
             Assert.NotNull(exception);
             Assert.NotNull(exception.ResponseHeaders);
-            Assert.True(exception.ResponseHeaders.ContainsKey("Content-Type"));
+            Assert.True(exception.ResponseHeaders!.ContainsKey("Content-Type"));
         }
 
         [Fact]
