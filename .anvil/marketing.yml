@@ -1,0 +1,13 @@
+# Language declaration for anvilco/marketing-site. Read at build time to source
+# the C# / .NET SDK page from this repo. `supported` is omitted so it derives
+# from repo visibility (public = live). Examples are omitted: this repo keeps a
+# single combined Example.cs rather than per-product files, so the marketing
+# site's committed content stands until per-product examples exist.
+products:
+  - generate
+  - fill
+  - sign
+languages:
+  - key: csharp
+    label: "C# & .NET"
+    slug: csharp-dotnet
