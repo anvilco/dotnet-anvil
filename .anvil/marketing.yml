@@ -10,4 +10,5 @@ products:
 languages:
   - key: csharp
     label: "C# & .NET"
+    shortLabel: "C#"
     slug: csharp-dotnet
