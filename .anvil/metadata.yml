@@ -2,3 +2,4 @@ languages:
   - key: csharp-dotnet
     label: "C# & .NET"
     shortLabel: "C#"
+    extension: cs
