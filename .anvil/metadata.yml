@@ -5,4 +5,3 @@ languages:
     label: "C# & .NET"
     shortLabel: "C#"
     extension: cs
-    fenceTag: csharp
