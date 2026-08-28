@@ -11,7 +11,7 @@
 using Anvil.Client;
 using Anvil.Payloads.Request.Types;
 
-class CreateEtchPacketExample
+class EsignExample
 {
     static async Task Main(string[] args)
     {
