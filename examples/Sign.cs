@@ -11,7 +11,7 @@
 using Anvil.Client;
 using Anvil.Payloads.Request.Types;
 
-class EsignExample
+class SignExample
 {
     static async Task Main(string[] args)
     {
