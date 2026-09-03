@@ -18,6 +18,9 @@ class FillExample
         // set up your own template.
         var pdfTemplateEid = "05xXsZko33JIO6aq5Pnr";
 
+        var longText =
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
+
         var payload = new Anvil.Payloads.Request.FillPdf
         {
             Title = "My PDF Title",
@@ -54,12 +57,13 @@ class FillExample
                 {"dollar", 123.45},
                 {"integer", 12345},
                 {"percent", 50.3},
-                {"longText", "Lorem ipsum dolor sit amet, consectetur adipiscing elit."}
+                {"longText", longText}
             }
         };
 
         var client = new RestClient(apiKey);
-        var wasWritten = await client.FillPdf(pdfTemplateEid, payload, "./fill-output.pdf");
+        var wasWritten = await client.FillPdf(
+            pdfTemplateEid, payload, "./fill-output.pdf");
 
         Console.WriteLine(wasWritten
             ? "Filled PDF saved to fill-output.pdf"

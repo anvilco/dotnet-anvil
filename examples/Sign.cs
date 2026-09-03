@@ -17,17 +17,23 @@ class SignExample
     {
         var apiKey = Environment.GetEnvironmentVariable("ANVIL_API_KEY");
 
+        // A sample PDF template available to any account. See
+        // https://www.useanvil.com/help/tutorials/set-up-a-pdf-template to
+        // set up your own template.
+        var pdfTemplateEid = "05xXsZko33JIO6aq5Pnr";
+
         var signerName = "Testy Signer";
         var signerEmail = args.Length > 0 ? args[0] : "";
 
         var payload = new Anvil.Payloads.Request.CreateEtchPacket
         {
-            // The packet is ready to send: an email goes to the first signer.
-            // Use IsDraft = true to review it in the dashboard first
+            // The packet is ready to send: an email goes to the first
+            // signer. Use IsDraft = true to review it in the dashboard
+            // first
             IsDraft = false,
 
-            // Test packets use development signatures and do not count toward
-            // your billed packets
+            // Test packets use development signatures and do not count
+            // toward your billed packets
             IsTest = true,
 
             Name = "Test Docs - " + signerName,
@@ -41,11 +47,7 @@ class SignExample
                     // Your own ID for referencing this file in Data and
                     // Signers below
                     Id = "sampleTemplate",
-
-                    // A sample PDF template available to any account. See
-                    // https://www.useanvil.com/help/tutorials/set-up-a-pdf-template
-                    // to set up your own template
-                    CastEid = "05xXsZko33JIO6aq5Pnr",
+                    CastEid = pdfTemplateEid,
                 },
             },
 
@@ -71,8 +73,8 @@ class SignExample
                 },
             },
 
-            // This data fills the PDF before it is sent to any signers. IDs
-            // here match the fields configured on the PDF template
+            // This data fills the PDF before it is sent to any signers.
+            // IDs here match the fields configured on the PDF template
             Data = new
             {
                 Payloads = new
@@ -92,8 +94,8 @@ class SignExample
         var client = new GraphQLClient(apiKey);
         var response = await client.CreateEtchPacket(payload);
 
-        // The response's CreateEtchPacket member is a dynamic object; fields
-        // use the API's camelCase names
+        // The response's CreateEtchPacket member is a dynamic object;
+        // fields use the API's camelCase names
         Console.WriteLine("Visit the new packet on your dashboard: "
             + response.CreateEtchPacket["detailsURL"]);
     }

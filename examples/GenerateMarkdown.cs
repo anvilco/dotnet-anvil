@@ -15,6 +15,17 @@ class GenerateMarkdownExample
     {
         var apiKey = Environment.GetEnvironmentVariable("ANVIL_API_KEY");
 
+        var invoiceRows = new List<List<string>>()
+        {
+            new() { "Description", "Quantity", "Price" },
+            new() { "4x Large Widgets", "4", "$40.00" },
+            new()
+            {
+                "10x Medium Sized Widgets in dark blue", "10", "$100.00"
+            },
+            new() { "10x Small Widgets in white", "6", "$60.00" }
+        };
+
         var payload = new GeneratePdf()
         {
             Title = "Example Invoice",
@@ -27,32 +38,32 @@ class GenerateMarkdownExample
                 },
                 new GeneratePdfItem()
                 {
-                    Content = @"
-Lorem **ipsum** dolor sit _amet_, consectetur adipiscing elit, sed [do eiusmod](https://www.useanvil.com/docs) tempor incididunt ut labore et dolore magna aliqua.
-
-* Sagittis eu volutpat odio facilisis.
-
-* Erat nam at lectus urna.",
+                    // Not verbatim (@"..."): the indentation would become
+                    // part of the Markdown, where four spaces means a code
+                    // block.
+                    Content = "\n"
+                        + "Lorem **ipsum** dolor sit _amet_, consectetur "
+                        + "adipiscing elit, sed "
+                        + "[do eiusmod](https://www.useanvil.com/docs) "
+                        + "tempor incididunt ut labore et dolore magna "
+                        + "aliqua.\n\n"
+                        + "* Sagittis eu volutpat odio facilisis.\n\n"
+                        + "* Erat nam at lectus urna.",
                 },
                 new GeneratePdfTable()
                 {
                     Table = new GeneratePdfTableContent()
                     {
                         FirstRowHeaders = true,
-                        Rows = new List<List<string>>()
-                        {
-                            new() { "Description", "Quantity", "Price" },
-                            new() { "4x Large Widgets", "4", "$40.00" },
-                            new() { "10x Medium Sized Widgets in dark blue", "10", "$100.00" },
-                            new() { "10x Small Widgets in white", "6", "$60.00" }
-                        }
+                        Rows = invoiceRows
                     },
                 },
             }
         };
 
         var client = new RestClient(apiKey);
-        var wasWritten = await client.GeneratePdf(payload, "./generate-markdown-output.pdf");
+        var wasWritten = await client.GeneratePdf(
+            payload, "./generate-markdown-output.pdf");
 
         Console.WriteLine(wasWritten
             ? "Generated PDF saved to generate-markdown-output.pdf"

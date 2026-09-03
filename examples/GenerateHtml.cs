@@ -24,16 +24,19 @@ class GenerateHtmlExample
                 Html = @"
                     <h1 class='header-one'>What is Lorem Ipsum?</h1>
                     <p>
-                      Lorem Ipsum is simply dummy text of the printing and typesetting
-                      industry. Lorem Ipsum has been the industry's standard dummy text
-                      ever since the <strong>1500s</strong>, when an unknown printer took
-                      a galley of type and scrambled it to make a type specimen book.
+                      Lorem Ipsum is simply dummy text of the printing
+                      and typesetting industry. Lorem Ipsum has been the
+                      industry's standard dummy text ever since the
+                      <strong>1500s</strong>, when an unknown printer took
+                      a galley of type and scrambled it to make a type
+                      specimen book.
                     </p>
                     <h3 class='header-two'>Where does it come from?</h3>
                     <p>
-                      Contrary to popular belief, Lorem Ipsum is not simply random text.
-                      It has roots in a piece of classical Latin literature from
-                      <i>45 BC</i>, making it over <strong>2000</strong> years old.
+                      Contrary to popular belief, Lorem Ipsum is not
+                      simply random text. It has roots in a piece of
+                      classical Latin literature from <i>45 BC</i>, making
+                      it over <strong>2000</strong> years old.
                     </p>
                 ",
                 Css = @"
@@ -45,7 +48,8 @@ class GenerateHtmlExample
         };
 
         var client = new RestClient(apiKey);
-        var wasWritten = await client.GeneratePdf(payload, "./generate-html-output.pdf");
+        var wasWritten = await client.GeneratePdf(
+            payload, "./generate-html-output.pdf");
 
         Console.WriteLine(wasWritten
             ? "Generated PDF saved to generate-html-output.pdf"
