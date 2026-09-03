@@ -1,3 +1,5 @@
+packageManagerInstall:
+  - dotnet add package Anvil
 languages:
   - key: csharp-dotnet
     label: "C# & .NET"
