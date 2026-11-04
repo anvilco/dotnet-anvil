@@ -85,10 +85,6 @@ jobs:
         run: npm run check:generated
         working-directory: dev
 
-      # The client's operations don't match the schema yet (documentGroup.id,
-      # forgeSubmit's errorType). Advisory until the operations are brought in
-      # line with node-anvil's, then this becomes required.
       - name: Validate the operations
         run: npm run check:graphql
         working-directory: dev
-        continue-on-error: true

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Anvil.GraphQL;
+
 using Newtonsoft.Json.Linq;
 
 namespace Anvil.Client
@@ -60,9 +62,9 @@ namespace Anvil.Client
         public Task<Payloads.Response.EtchPacketPayload> GetEtchPacket(string etchPacketEid)
         {
             return _anvil.RequestGraphQLAsync<Payloads.Response.EtchPacketPayload>(
-                new Queries.GetEtchPacket().GetFullDefaultQuery(),
+                Operations.EtchPacketQuery(),
                 new { Eid = etchPacketEid },
-                "GetEtchPacket");
+                "EtchPacket");
         }
 
         /// <summary>
@@ -73,7 +75,7 @@ namespace Anvil.Client
         public Task<Payloads.Response.GenerateEtchSignUrlPayload> GenerateEtchSignUrl(string signerEid, string clientUserId)
         {
             return _anvil.RequestGraphQLAsync<Payloads.Response.GenerateEtchSignUrlPayload>(
-                new Queries.GenerateEtchSignUrl().GetFullDefaultQuery(),
+                Operations.GenerateEtchSignUrlMutation(),
                 new { signerEid, clientUserId },
                 "GenerateEtchSignURL");
         }
@@ -86,7 +88,7 @@ namespace Anvil.Client
         public Task<Payloads.Response.ForgeSubmitPayload> ForgeSubmit(Payloads.Request.ForgeSubmit requestPayload)
         {
             return _anvil.RequestGraphQLAsync<Payloads.Response.ForgeSubmitPayload>(
-                new Queries.ForgeSubmit().GetFullDefaultQuery(),
+                Operations.ForgeSubmitMutation(),
                 requestPayload,
                 "ForgeSubmit");
         }
@@ -94,7 +96,7 @@ namespace Anvil.Client
         public Task<Payloads.Response.RemoveWeldDataPayload> RemoveWeldData(string weldEid)
         {
             return _anvil.RequestGraphQLAsync<Payloads.Response.RemoveWeldDataPayload>(
-                new Queries.RemoveWeldData().GetFullDefaultQuery(),
+                Operations.RemoveWeldDataMutation(),
                 new Dictionary<string, string> { { "eid", weldEid } },
                 "RemoveWeldData");
         }
@@ -106,13 +108,13 @@ namespace Anvil.Client
         /// </summary>
         public Task<Payloads.Response.CurrentUserPayload> GetCurrentUser()
         {
-            return _anvil.RequestGraphQLAsync<Payloads.Response.CurrentUserPayload>(new Queries.CurrentUser().GetFullDefaultQuery());
+            return _anvil.RequestGraphQLAsync<Payloads.Response.CurrentUserPayload>(Operations.CurrentUserQuery());
         }
 
         public Task<Payloads.Response.CreateEtchPacketPayload> CreateEtchPacket(Payloads.Request.CreateEtchPacket payload)
         {
             return _anvil.RequestGraphQLAsync<Payloads.Response.CreateEtchPacketPayload>(
-                new Queries.CreateEtchPacket().GetFullDefaultQuery(),
+                Operations.CreateEtchPacketMutation(),
                 payload,
                 "CreateEtchPacket");
         }

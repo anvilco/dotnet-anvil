@@ -29,10 +29,9 @@ using System.Net.Http;
 using System.Text;
 
 using Anvil;
-using Anvil.Client;
-using Anvil.Payloads.Request.Types;
+using Anvil.Payloads;
+using Anvil.Types.GraphQL;
 
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 var apiKey = Environment.GetEnvironmentVariable("ANVIL_API_KEY");
@@ -46,14 +45,9 @@ if (string.IsNullOrWhiteSpace(apiKey))
     return 1;
 }
 
-Console.WriteLine($"Testing the Anvil .NET client against {baseUrl}\n");
+Console.WriteLine($"Testing the Anvil .NET client {AnvilClient.Version} against {baseUrl}\n");
 
 using var anvil = new AnvilClient(new AnvilClientOptions { ApiKey = apiKey, BaseUrl = baseUrl });
-// The pre-1.0 clients, until their methods move to AnvilClient
-#pragma warning disable CS0618
-using var rest = new RestClient(apiKey, baseUrl);
-using var graphql = new GraphQLClient(apiKey, baseUrl);
-#pragma warning restore CS0618
 
 var results = new List<(string Name, string Status)>();
 
@@ -170,67 +164,64 @@ await Check("RequestRestBytesAsync", async () =>
     return AssertPdf(pdf);
 });
 
-await Check("GeneratePdf (markdown)", async () =>
+await Check("GeneratePdfAsync (markdown)", async () =>
 {
-    var payload = new Anvil.Payloads.Request.GeneratePdf
+    var pdf = await anvil.GeneratePdfAsync(new GeneratePdfPayload
     {
         Title = "Markdown",
-        Type = "markdown",
-        Data = new List<IGeneratePdfListable>
+        Data = new List<MarkdownContent>
         {
-            new GeneratePdfItem { Label = "Hello", Content = "From the Anvil .NET client" },
-            new GeneratePdfTable
+            new() { Label = "Hello", Content = "From the Anvil .NET client" },
+            new()
             {
-                Table = new GeneratePdfTableContent
+                Table = new MarkdownTable
                 {
                     FirstRowHeaders = true,
-                    Rows = new List<List<string>>
+                    Rows = new List<List<string?>?>
                     {
                         new() { "Method", "Status" },
-                        new() { "GeneratePdf", "PASS" },
+                        new() { "GeneratePdfAsync", "PASS" },
                     },
                 },
             },
         },
-    };
-    var content = await rest.GeneratePdf(payload);
-    return AssertPdf(await content.ReadAsByteArrayAsync());
+    });
+    return AssertPdf(pdf);
 });
 
-await Check("GeneratePdf (HTML)", async () =>
+await Check("GeneratePdfAsync (HTML)", async () =>
 {
-    var payload = new Anvil.Payloads.Request.GeneratePdf
+    var pdf = await anvil.GeneratePdfAsync(new GeneratePdfPayload
     {
         Title = "HTML",
-        Type = "html",
-        Data = new GeneratePdfHtml
+        Type = GeneratePdfPayload.TypeValues.Html,
+        Data = new HtmlContent
         {
             Html = "<h1>Hello</h1><p>From the Anvil .NET client</p>",
             Css = "h1 { color: #4c5bf1; }",
         },
-    };
-    var content = await rest.GeneratePdf(payload);
-    return AssertPdf(await content.ReadAsByteArrayAsync());
+    });
+    return AssertPdf(pdf);
 });
 
-await Check("FillPdf", async () =>
+await Check("FillPdfAsync", async () =>
 {
     SkipUnless(castEid, "No PDF template with example data found. Set ANVIL_PDF_TEMPLATE_ID.");
-    var stream = await rest.FillPdf(castEid!, FillPayload());
-    return $"{castEid}, {AssertPdf(await ReadAll(stream))}";
+    var pdf = await anvil.FillPdfAsync(castEid!, FillPayload());
+    return $"{castEid}, {AssertPdf(pdf)}";
 });
 
-await Check("FillPdf (VERSION_LATEST)", async () =>
+await Check("FillPdfAsync (VERSION_LATEST)", async () =>
 {
     SkipUnless(castEid, "No PDF template with example data found. Set ANVIL_PDF_TEMPLATE_ID.");
-    var stream = await rest.FillPdf(castEid!, FillPayload(), ClientConstants.VERSION_LATEST);
-    return AssertPdf(await ReadAll(stream));
+    var pdf = await anvil.FillPdfAsync(castEid!, FillPayload(), AnvilClient.VERSION_LATEST);
+    return AssertPdf(pdf);
 });
 
-await Check("FillPdf (stream)", async () =>
+await Check("FillPdfStreamAsync", async () =>
 {
     SkipUnless(castEid, "No PDF template with example data found. Set ANVIL_PDF_TEMPLATE_ID.");
-    using var stream = await rest.FillPdf(castEid!, FillPayload());
+    using var stream = await anvil.FillPdfStreamAsync(castEid!, FillPayload());
     using var buffer = new MemoryStream();
     var chunk = new byte[64 * 1024];
     int read;
@@ -242,88 +233,93 @@ await Check("FillPdf (stream)", async () =>
     return AssertPdf(buffer.ToArray());
 });
 
-await Check("CreateEtchPacket (multipart upload)", () =>
+await Check("CreateEtchPacketAsync (multipart upload)", () =>
     throw new Skip("Phase 4: multipart GraphQL file uploads are not supported yet (#26)"));
 
-await Check("CreateEtchPacket (base64 upload)", async () =>
+await Check("CreateEtchPacketAsync (base64 upload)", async () =>
 {
     // A base64 encoded file in the mutation's variables, as the client has always sent files
-    var payload = new Anvil.Payloads.Request.CreateEtchPacket
+    var packet = await anvil.CreateEtchPacketAsync(new CreateEtchPacketPayload
     {
         Name = "Anvil .NET client test (base64 upload)",
         IsTest = true,
         // Send it right away, so it has signers that can sign
         IsDraft = false,
-        Files = new IEtchPacketAttachable[]
+        Files = new List<EtchFile>
         {
             new DocumentUpload
             {
                 Id = "testFile",
                 Title = "Test File",
-                File = new Base64FileUpload
+                File = new Base64Upload
                 {
-                    Data = Convert.ToBase64String(File.ReadAllBytes(pdfToSign)),
+                    Data = Convert.ToBase64String(System.IO.File.ReadAllBytes(pdfToSign)),
                     Filename = "dummy.pdf",
-                    Mimetype = "application/pdf",
                 },
-                Fields = new List<SignatureField>
-                {
-                    new()
-                    {
-                        Id = "signature",
-                        Type = "signature",
-                        PageNum = 0,
-                        Rect = new Rect { X = 100, Y = 100, Width = 150, Height = 30 },
-                    },
-                },
+                Fields = new List<object> { SignatureBox() },
             },
         },
-        Signers = new[]
+        Signers = new List<object> { EmbeddedSigner() },
+    });
+    etchPacketEid = packet.Eid;
+    documentGroupEid = packet.DocumentGroup?.Eid;
+    signerEid = packet.DocumentGroup?.Signers?.FirstOrDefault()?.Eid;
+    return etchPacketEid ?? throw new Exception("Expected an eid");
+});
+
+await Check("CreateEtchPacketAsync (in-person signer)", async () =>
+{
+    // A draft, so no one is asked to sign
+    var packet = await anvil.CreateEtchPacketAsync(new CreateEtchPacketPayload
+    {
+        Name = "Anvil .NET client test (in-person signer)",
+        IsTest = true,
+        IsDraft = true,
+        Files = new List<EtchFile>
+        {
+            new DocumentUpload
+            {
+                Id = "testFile",
+                Title = "Test File",
+                File = new Base64Upload { Data = Convert.ToBase64String(System.IO.File.ReadAllBytes(pdfToSign)), Filename = "dummy.pdf" },
+                Fields = new List<object> { SignatureBox() },
+            },
+        },
+        Signers = new List<object>
         {
             new EtchSigner
             {
                 Id = "signer",
                 Name = "Test Signer",
                 Email = "test-signer@example.com",
-                // Signs through a URL from GenerateEtchSignUrl rather than by email
-                SignerType = "embedded",
-                Fields = new[] { new SignerField { FileId = "testFile", FieldId = "signature" } },
+                SignerType = EtchSigner.SignerTypeValues.InPerson,
+                Fields = new List<object> { new SignerField { FileId = "testFile", FieldId = "signature" } },
             },
         },
-    };
-    var response = await graphql.CreateEtchPacket(payload);
-    var created = (JObject?)response.CreateEtchPacket ?? throw new Exception("Expected createEtchPacket");
-    etchPacketEid = created["eid"]?.ToString();
-    documentGroupEid = created["documentGroup"]?["eid"]?.ToString();
-    signerEid = (created["documentGroup"]?["signers"] as JArray)?.FirstOrDefault()?["eid"]?.ToString();
-    return etchPacketEid ?? throw new Exception("Expected an eid");
+    });
+    return $"draft {packet.Eid}";
 });
-
-await Check("CreateEtchPacket (in-person signer)", () =>
-    throw new Skip("Phase 3: EtchSigner rejects the `in-person` signer type (#27)"));
 
 await Check("RequestGraphQLAsync (createCast upload)", () =>
     throw new Skip("Phase 4: multipart GraphQL file uploads are not supported yet (#26)"));
 
-await Check("GetEtchPacket", async () =>
+await Check("GetEtchPacketAsync", async () =>
 {
-    SkipUnless(etchPacketEid, "CreateEtchPacket failed");
-    var response = await graphql.GetEtchPacket(etchPacketEid!);
-    var packet = response.EtchPacket ?? throw new Exception("Expected etchPacket");
+    SkipUnless(etchPacketEid, "CreateEtchPacketAsync failed");
+    var packet = await anvil.GetEtchPacketAsync(etchPacketEid!);
     if (packet.Eid != etchPacketEid)
     {
         throw new Exception("Got a different packet back");
     }
 
-    return packet.DocumentGroup?.Status ?? "no document group";
+    return packet.Status ?? "no status";
 });
 
-await Check("GenerateEtchSignUrl", async () =>
+await Check("GenerateEtchSignUrlAsync", async () =>
 {
-    SkipUnless(signerEid, "CreateEtchPacket failed");
-    var response = await graphql.GenerateEtchSignUrl(signerEid!, "dotnet-anvil-test-client");
-    var url = response.GenerateEtchSignUrl;
-    if (url == null || !(url.StartsWith("http://") || url.StartsWith("https://")))
+    SkipUnless(signerEid, "CreateEtchPacketAsync failed");
+    var url = await anvil.GenerateEtchSignUrlAsync(signerEid!, "dotnet-anvil-test-client");
+    if (!(url.StartsWith("http://") || url.StartsWith("https://")))
     {
         throw new Exception($"Expected a URL, got `{url}`");
     }
@@ -331,10 +327,10 @@ await Check("GenerateEtchSignUrl", async () =>
     return "got a URL";
 });
 
-await Check("DownloadDocuments", async () =>
+await Check("DownloadDocumentsAsync", async () =>
 {
-    SkipUnless(documentGroupEid, "CreateEtchPacket failed");
-    var data = await ReadAll(await rest.DownloadDocuments(documentGroupEid!));
+    SkipUnless(documentGroupEid, "CreateEtchPacketAsync failed");
+    var data = await anvil.DownloadDocumentsAsync(documentGroupEid!);
     // Zip files start with "PK"
     if (data.Length < 2 || data[0] != (byte)'P' || data[1] != (byte)'K')
     {
@@ -344,25 +340,23 @@ await Check("DownloadDocuments", async () =>
     return $"{data.Length} bytes";
 });
 
-await Check("ForgeSubmit", async () =>
+await Check("ForgeSubmitAsync", async () =>
 {
     SkipUnless(forgeEid, "No webform (Forge) found in your organization. Set ANVIL_FORGE_EID.");
-    var response = await graphql.ForgeSubmit(new Anvil.Payloads.Request.ForgeSubmit
+    var submission = await anvil.ForgeSubmitAsync(new ForgeSubmitPayload
     {
         ForgeEid = forgeEid,
         Payload = new { },
         IsTest = true,
     });
-    var weldData = response.ForgeSubmit?.WeldData as JObject;
-    weldDataEid = weldData?["eid"]?.ToString();
+    weldDataEid = submission.WeldData?.Eid;
     return $"{forgeEid}, created {weldDataEid ?? throw new Exception("Expected weldData.eid")}";
 });
 
-await Check("RemoveWeldData", async () =>
+await Check("RemoveWeldDataAsync", async () =>
 {
-    SkipUnless(weldDataEid, "ForgeSubmit did not create a submission");
-    var response = await graphql.RemoveWeldData(weldDataEid!);
-    if (response.RemoveWeldData != true)
+    SkipUnless(weldDataEid, "ForgeSubmitAsync did not create a submission");
+    if (!await anvil.RemoveWeldDataAsync(weldDataEid!))
     {
         throw new Exception("Expected true");
     }
@@ -370,10 +364,10 @@ await Check("RemoveWeldData", async () =>
     return $"removed {weldDataEid}";
 });
 
-await Check("GetCurrentUser", async () =>
+await Check("GetCurrentUserAsync", async () =>
 {
-    var response = await graphql.GetCurrentUser();
-    return response.CurrentUser?["eid"]?.ToString() ?? throw new Exception("Expected currentUser.eid");
+    var user = await anvil.GetCurrentUserAsync();
+    return user.Eid ?? throw new Exception("Expected currentUser.eid");
 });
 
 var passed = results.Count(r => r.Status == "PASS");
@@ -398,8 +392,7 @@ async Task Check(string name, Func<Task<string?>> fn)
     catch (AnvilClientException e)
     {
         results.Add((name, "FAIL"));
-        var messages = e.Data.Keys.Cast<object>().Select(k => $"{k}: {e.Data[k]}");
-        Console.WriteLine($"  FAIL  {name}: {e.Message}{(messages.Any() ? $" ({string.Join("; ", messages)})" : "")}");
+        Console.WriteLine($"  FAIL  {name}: {e.Message}");
     }
     catch (Exception e)
     {
@@ -408,9 +401,24 @@ async Task Check(string name, Func<Task<string?>> fn)
     }
 }
 
-Anvil.Payloads.Request.FillPdf FillPayload() => new()
+FillPdfPayload FillPayload() => new() { Data = castData ?? new JObject() };
+
+static SignatureField SignatureBox() => new()
 {
-    Data = castData?.ToObject<Dictionary<string, dynamic>>() ?? new Dictionary<string, dynamic>(),
+    Id = "signature",
+    Type = SignatureField.TypeValues.Signature,
+    PageNum = 0,
+    Rect = new Rect { X = 100, Y = 100, Width = 150, Height = 30 },
+};
+
+static EtchSigner EmbeddedSigner() => new()
+{
+    Id = "signer",
+    Name = "Test Signer",
+    Email = "test-signer@example.com",
+    // Signs through a URL from GenerateEtchSignUrlAsync rather than by email
+    SignerType = EtchSigner.SignerTypeValues.Embedded,
+    Fields = new List<object> { new SignerField { FileId = "testFile", FieldId = "signature" } },
 };
 
 static string? Env(string name)
@@ -435,16 +443,6 @@ static string AssertPdf(byte[] data)
     }
 
     return $"{data.Length} bytes";
-}
-
-static async Task<byte[]> ReadAll(Stream stream)
-{
-    using (stream)
-    {
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer);
-        return buffer.ToArray();
-    }
 }
 
 class Skip : Exception
