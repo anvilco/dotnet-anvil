@@ -336,12 +336,11 @@ dotnet format --verify-no-changes
 
 `test-client/` is a console app that runs every client method against an Anvil
 environment and prints a `PASS`, `FAIL` or `SKIP` for each. Run it on a release
-before and after a change to see which behaviors changed. It uses production by
-default (everything it creates is test data; set `ANVIL_BASE_URL` for another
-environment) and needs an API key:
+before and after a change to see which behaviors changed. It uses staging by
+default, and needs an API key for that environment:
 
 ```bash
-ANVIL_API_KEY=<your API key> dotnet run --project test-client
+ANVIL_API_KEY=<your staging API key> dotnet run --project test-client
 ```
 
 * `ANVIL_BASE_URL` - _optional_ Test another environment instead, e.g. `http://localhost:3000`.

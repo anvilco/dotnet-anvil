@@ -4,7 +4,7 @@
     Runs every client method against a real Anvil environment and prints a
     pass or fail for each. See the file header in Program.cs.
 
-      ANVIL_API_KEY=<your API key> dotnet run \-\-project test-client
+      ANVIL_API_KEY=<your staging API key> dotnet run \-\-project test-client
   -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>

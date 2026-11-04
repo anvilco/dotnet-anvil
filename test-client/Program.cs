@@ -1,16 +1,16 @@
-// Runs every client method against a real Anvil environment (production by
-// default; set ANVIL_BASE_URL for another) and prints a pass or fail for each.
+// Runs every client method against a real Anvil environment (staging by
+// default) and prints a pass or fail for each.
 //
 // Run it against a release before and after a change to see which behaviors
 // changed. Everything it checks is the client's public behavior: what each
 // method sends, and the shape of what it returns.
 //
 // Usage:
-//   ANVIL_API_KEY=<your API key> dotnet run --project test-client
+//   ANVIL_API_KEY=<your staging API key> dotnet run --project test-client
 //
 // Environment variables:
 //   ANVIL_API_KEY          Required. An API key for the environment being tested.
-//   ANVIL_BASE_URL         Optional. Another environment. Defaults to https://app.useanvil.com
+//   ANVIL_BASE_URL         Optional. Defaults to https://staging.useanvil.com
 //   ANVIL_ACCESS_TOKEN     Optional. An OAuth access token for the same environment,
 //                          to test Bearer auth. Skipped when not set.
 //   ANVIL_PDF_TEMPLATE_ID  Optional. The PDF template to fill. Defaults to the first
@@ -34,13 +34,13 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 var apiKey = Environment.GetEnvironmentVariable("ANVIL_API_KEY");
-var baseUrl = Env("ANVIL_BASE_URL") ?? "https://app.useanvil.com";
+var baseUrl = Env("ANVIL_BASE_URL") ?? "https://staging.useanvil.com";
 var accessToken = Env("ANVIL_ACCESS_TOKEN");
 var pdfToSign = Path.Combine(AppContext.BaseDirectory, "assets", "dummy.pdf");
 
 if (string.IsNullOrWhiteSpace(apiKey))
 {
-    Console.Error.WriteLine("ANVIL_API_KEY is required. Usage: ANVIL_API_KEY=<your API key> dotnet run --project test-client");
+    Console.Error.WriteLine("ANVIL_API_KEY is required. Usage: ANVIL_API_KEY=<your staging API key> dotnet run --project test-client");
     return 1;
 }
 
