@@ -48,7 +48,7 @@ jobs:
         run: >-
           dotnet test --no-build --verbosity normal
           /p:CollectCoverage=true
-          /p:CoverletOutput=../coverage/
+          /p:CoverletOutput=../../coverage/
           /p:CoverletOutputFormat=cobertura
           /p:Include="[Anvil]*"
           /p:ExcludeByFile="**/Types/GraphQL/*.cs%2c**/Types/Operations/*.cs%2c**/Types/Rest/*.cs"
