@@ -1,16 +1,40 @@
+using System;
+
 namespace Anvil
 {
     static class Constants
     {
-        public const string GraphQLEndpoint = "https://graphql.useanvil.com";
+        // Production. Every URL the clients use is derived from the base URL
+        // the client was constructed with, which defaults to this.
+        public const string DefaultBaseUrl = "https://app.useanvil.com";
+
+        public static string NormalizeBaseUrl(string? baseUrl)
+        {
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                return DefaultBaseUrl;
+            }
+
+            var trimmed = baseUrl!.Trim().TrimEnd('/');
+            if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
+                || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+                || string.IsNullOrEmpty(uri.Host))
+            {
+                throw new ArgumentException($"baseUrl must be an http or https URL, got `{baseUrl}`", nameof(baseUrl));
+            }
+
+            return trimmed;
+        }
+
+        public static string GraphQLEndpoint(string? baseUrl) => NormalizeBaseUrl(baseUrl) + "/graphql";
 
         // Remember to end the URI string here with a `/` since it will be appended onto
         // when the HTTP clients are used. *ALSO* when providing a URI path
-        // (i.e. `RestClient.SendRequest("path/here", data);`), the path must _NOT_ 
+        // (i.e. `RestClient.SendRequest("path/here", data);`), the path must _NOT_
         // have a starting `/` or the path will be rewritten.
         // For example: Using "/fill/my.pdf" will have a final URI of
         // "http://app.useanvil.com/fill/my.pdf", removing the "api/v1".
-        public const string RestEndpoint = "https://app.useanvil.com/api/v1/";
+        public static string RestEndpoint(string? baseUrl) => NormalizeBaseUrl(baseUrl) + "/api/v1/";
 
         // https://www.useanvil.com/docs/api/fill-pdf
         public const string FillPdf = @"fill/{0}.pdf";

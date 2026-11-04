@@ -22,11 +22,23 @@ namespace Anvil.Client
         private readonly GraphQLHttpClient _graphQlHttpClient;
         private bool _disposed;
 
-        public GraphQLClient(string apiKey)
+        public GraphQLClient(string apiKey) : this(apiKey, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a GraphQL client for the Anvil environment at <paramref name="baseUrl"/>.
+        /// </summary>
+        /// <param name="apiKey">Your API key</param>
+        /// <param name="baseUrl">
+        /// The environment's base URL, e.g. https://staging.useanvil.com. Defaults to
+        /// production, https://app.useanvil.com. GraphQL requests go to {baseUrl}/graphql.
+        /// </param>
+        public GraphQLClient(string apiKey, string? baseUrl)
         {
             _apiKey = apiKey;
 
-            var httpOptions = new GraphQLHttpClientOptions { EndPoint = new Uri(Constants.GraphQLEndpoint) };
+            var httpOptions = new GraphQLHttpClientOptions { EndPoint = new Uri(Constants.GraphQLEndpoint(baseUrl)) };
 
             var encodedKey = EncodeApiKey();
             var httpClient = new HttpClient();

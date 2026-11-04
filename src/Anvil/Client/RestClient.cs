@@ -18,12 +18,25 @@ namespace Anvil.Client
         private readonly JsonSerializerSettings _jsonSerializerSettings;
         private bool _disposed;
 
-        public RestClient(string apiKey)
+        public RestClient(string apiKey) : this(apiKey, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a REST client for the Anvil environment at <paramref name="baseUrl"/>.
+        /// </summary>
+        /// <param name="apiKey">Your API key</param>
+        /// <param name="baseUrl">
+        /// The environment's base URL, e.g. https://staging.useanvil.com. Defaults to
+        /// production, https://app.useanvil.com. REST requests go to {baseUrl}/api/v1/
+        /// and document downloads to {baseUrl}/api/document-group/.
+        /// </param>
+        public RestClient(string apiKey, string? baseUrl)
         {
             _apiKey = apiKey;
             var encodedKey = EncodeApiKey();
             var httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri(Constants.RestEndpoint);
+            httpClient.BaseAddress = new Uri(Constants.RestEndpoint(baseUrl));
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", $"Basic {encodedKey}");
             httpClient.DefaultRequestHeaders.Accept.Clear();
