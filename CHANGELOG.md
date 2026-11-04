@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- `RestClient` and `GraphQLClient` take an optional `baseUrl`, e.g. `new RestClient(apiKey, "https://staging.useanvil.com")`. It defaults to production, `https://app.useanvil.com`, and every URL derives from it: REST requests go to `{baseUrl}/api/v1/`, GraphQL to `{baseUrl}/graphql` (no longer `https://graphql.useanvil.com`) and document downloads to `{baseUrl}/api/document-group/`.
+- `RestClient` and `GraphQLClient` take an optional `baseUrl`, e.g. `new RestClient(apiKey, baseUrl)`. It defaults to production, `https://app.useanvil.com`, and every URL derives from it: REST requests go to `{baseUrl}/api/v1/`, GraphQL to `{baseUrl}/graphql` (no longer `https://graphql.useanvil.com`) and document downloads to `{baseUrl}/api/document-group/`.
 - Add `test-client/`, a console app that runs every client method against a real environment: `ANVIL_API_KEY=... dotnet run --project test-client`.
 - Add `schema/`, the Anvil GraphQL schema (from the published `@anvilco/types` package) and OpenAPI spec, and `dev/check-graphql.mjs`, which validates the client's queries and mutations against the schema.
 - Line endings are LF, and `.gitattributes` keeps them that way.

@@ -1,9 +1,9 @@
 # test-client baseline on v0.6.0 (2026-11-04)
 
-The output of `dotnet run --project test-client` against https://staging.useanvil.com on the 0.6.0 API, before the rewrite, for later phases to diff against. Checks marked `SKIP` with a phase are ones 0.6.0 cannot pass. The `FAIL`s are real: `currentUser` selects `numSentEtchPackets`, which the API no longer has, and two fills got a `429` because 0.6.0 has no rate limiter (a first run, a minute earlier, passed them). The operations the schema check flags (`documentGroup.id`, `forgeSubmit`'s `errorType`) still succeed against the API itself.
+The output of `dotnet run --project test-client` against the API on 0.6.0, before the rewrite, for later phases to diff against. Checks marked `SKIP` with a phase are ones 0.6.0 cannot pass. The `FAIL`s are real: `currentUser` selects `numSentEtchPackets`, which the API no longer has, and two fills got a `429` because 0.6.0 has no rate limiter (a first run, a minute earlier, passed them). The operations the schema check flags (`documentGroup.id`, `forgeSubmit`'s `errorType`) still succeed against the API itself.
 
 ```
-Testing the Anvil .NET client against https://staging.useanvil.com
+Testing the Anvil .NET client against <the environment>
   PASS  SendQuery (organization 24CaLWzZE7awEQlkfiaJ)
   SKIP  rate limiting: Phase 2: the client has no rate limiter yet
   SKIP  OAuth access token: Set ANVIL_ACCESS_TOKEN to test Bearer auth

@@ -31,7 +31,7 @@ namespace Anvil.Client
         /// </summary>
         /// <param name="apiKey">Your API key</param>
         /// <param name="baseUrl">
-        /// The environment's base URL, e.g. https://staging.useanvil.com. Defaults to
+        /// The environment's base URL, when Anvil has given you one. Defaults to
         /// production, https://app.useanvil.com. GraphQL requests go to {baseUrl}/graphql.
         /// </param>
         public GraphQLClient(string apiKey, string? baseUrl)
