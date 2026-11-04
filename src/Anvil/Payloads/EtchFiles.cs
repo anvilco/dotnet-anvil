@@ -15,7 +15,7 @@ namespace Anvil.Payloads
 
     /// <summary>
     /// A PDF uploaded with the packet. <c>File</c> is a <see cref="Base64Upload"/>,
-    /// or a file prepared with <see cref="AnvilClient.PrepareGraphQLFile(string)"/>
+    /// or a file prepared with <see cref="AnvilClient.PrepareGraphQLFile(string, string?, string?)"/>
     /// for a multipart upload. <c>Fields</c> are the <see cref="SignatureField"/>s to
     /// place on it.
     /// </summary>
@@ -39,7 +39,7 @@ namespace Anvil.Payloads
     {
     }
 
-    /// <summary>A file sent inline in the JSON, base64 encoded. For large files, prefer <see cref="AnvilClient.PrepareGraphQLFile(string)"/>.</summary>
+    /// <summary>A file sent inline in the JSON, base64 encoded. For large files, prefer <see cref="AnvilClient.PrepareGraphQLFile(string, string?, string?)"/>.</summary>
     public class Base64Upload : GeneratedModel
     {
         [JsonProperty("data", Required = Required.Always)]

@@ -13,7 +13,7 @@ namespace Anvil
     /// GraphQL multipart request spec. Create one with
     /// <see cref="AnvilClient.PrepareGraphQLFile(string, string?, string?)"/> and put it
     /// anywhere in the mutation's variables under a <c>file</c> key, e.g.
-    /// <see cref="Payloads.DocumentUpload.File"/>. Like node-anvil's <c>UploadWithOptions</c>.
+    /// <see cref="Types.GraphQL.EtchFile.File"/> of a <see cref="Payloads.DocumentUpload"/>. Like node-anvil's <c>UploadWithOptions</c>.
     /// </summary>
     public sealed class GraphQLUpload
     {

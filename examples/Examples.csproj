@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runnable examples of the client. Each is a class in this folder; pick one:
+
+      ANVIL_API_KEY=yourKey dotnet run -\-project examples -\- fill
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>AnvilExamples</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../src/Anvil/Anvil.csproj" />
+  </ItemGroup>
+
+</Project>

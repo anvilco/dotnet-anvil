@@ -1,102 +1,73 @@
-// Create an Etch e-sign packet via the Anvil API and send it to a signer.
+// Create an Etch e-sign packet from a PDF template and send it to a signer by email.
 // Docs: https://www.useanvil.com/docs/api/e-signatures
 //
-// Run it from a project with the Anvil package installed
-// (dotnet add package Anvil):
-//   ANVIL_API_KEY=yourKey dotnet run -- your.real.email@example.com
+//   ANVIL_API_KEY=yourKey dotnet run --project examples -- sign your.real.email@example.com
 //
 // A signature request email is sent to the address you pass, so use your real
 // email address. The new packet also appears in your dashboard's e-sign area.
+using Anvil;
+using Anvil.Payloads;
+using Anvil.Types.GraphQL;
 
-using Anvil.Client;
-using Anvil.Payloads.Request.Types;
+namespace AnvilExamples;
 
-class SignExample
+public static class Sign
 {
-    static async Task Main(string[] args)
+    public static async Task Run(AnvilClient anvil, string[] args)
     {
-        var apiKey = Environment.GetEnvironmentVariable("ANVIL_API_KEY");
-
-        // A sample PDF template available to any account. See
-        // https://www.useanvil.com/help/tutorials/set-up-a-pdf-template to
-        // set up your own template.
-        var pdfTemplateEid = "05xXsZko33JIO6aq5Pnr";
-
-        var signerName = "Testy Signer";
-        var signerEmail = args.Length > 0 ? args[0] : "";
-
-        var payload = new Anvil.Payloads.Request.CreateEtchPacket
+        if (args.Length == 0)
         {
-            // The packet is ready to send: an email goes to the first
-            // signer. Use IsDraft = true to review it in the dashboard
-            // first
+            throw new ArgumentException("Pass the signer's email address: dotnet run --project examples -- sign you@example.com");
+        }
+
+        // A sample PDF template available to any account
+        var pdfTemplateEid = "05xXsZko33JIO6aq5Pnr";
+        var signerEmail = args[0];
+
+        var packet = await anvil.CreateEtchPacketAsync(new CreateEtchPacketPayload
+        {
+            Name = "Test Docs - Testy Signer",
+            // The packet is ready to send: an email goes to the first signer.
+            // Use IsDraft = true to review it in the dashboard first.
             IsDraft = false,
-
-            // Test packets use development signatures and do not count
-            // toward your billed packets
+            // Test packets use development signatures and do not count toward your billed packets
             IsTest = true,
-
-            Name = "Test Docs - " + signerName,
             SignatureEmailSubject = "Custom email subject",
-            SignatureEmailBody = "Custom please sign these documents....",
-
-            Files = new IEtchPacketAttachable[]
+            SignatureEmailBody = "Custom please sign these documents",
+            Files = new List<EtchFile>
             {
-                new EtchCastRef()
-                {
-                    // Your own ID for referencing this file in Data and
-                    // Signers below
-                    Id = "sampleTemplate",
-                    CastEid = pdfTemplateEid,
-                },
+                new EtchCastRef { Id = "templatePdf", CastEid = pdfTemplateEid },
             },
-
-            Signers = new EtchSigner[]
-            {
-                // Signers sign in the order they are specified
-                new()
-                {
-                    Id = "signer1",
-                    Name = signerName,
-                    Email = signerEmail,
-                    SignerType = "email",
-
-                    // The fields this signer clicks through, in this order
-                    Fields = new SignerField[]
-                    {
-                        new()
-                        {
-                            FileId = "sampleTemplate",
-                            FieldId = "signature",
-                        },
-                    },
-                },
-            },
-
-            // This data fills the PDF before it is sent to any signers.
-            // IDs here match the fields configured on the PDF template
+            // Data to fill the template with before signing. Keys are the file ids above.
             Data = new
             {
-                Payloads = new
+                payloads = new
                 {
-                    sampleTemplate = new
+                    templatePdf = new
                     {
-                        data = new Dictionary<string, dynamic>
-                        {
-                            {"name", signerName},
-                            {"email", signerEmail},
-                        }
+                        data = new { shortTextField = "Hello World!", date = "2026-01-30", email = signerEmail },
                     },
                 },
             },
-        };
+            Signers = new List<object>
+            {
+                new EtchSigner
+                {
+                    Id = "signer1",
+                    Name = "Testy Signer",
+                    Email = signerEmail,
+                    // Signs by email, the default. Each signer signs the fields assigned to them.
+                    SignerType = EtchSigner.SignerTypeValues.Email,
+                    Fields = new List<object>
+                    {
+                        new SignerField { FileId = "templatePdf", FieldId = "signature1" },
+                    },
+                },
+            },
+        });
 
-        var client = new GraphQLClient(apiKey);
-        var response = await client.CreateEtchPacket(payload);
-
-        // The response's CreateEtchPacket member is a dynamic object;
-        // fields use the API's camelCase names
-        Console.WriteLine("Visit the new packet on your dashboard: "
-            + response.CreateEtchPacket["detailsURL"]);
+        Console.WriteLine($"Created packet {packet.Eid}, status {packet.Status}");
+        Console.WriteLine($"Details: {packet.DetailsUrl}");
+        Console.WriteLine($"A signature request was emailed to {signerEmail}");
     }
 }
