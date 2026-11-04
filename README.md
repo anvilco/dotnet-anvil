@@ -421,7 +421,7 @@ Every request derives from `BaseUrl`, which defaults to production, `https://app
 var anvil = new AnvilClient(new AnvilClientOptions
 {
     ApiKey = "...",
-    BaseUrl = "https://staging.useanvil.com",
+    BaseUrl = "https://<your-environment-url>",
 });
 ```
 

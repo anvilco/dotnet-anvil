@@ -2,7 +2,7 @@
 //
 //   ANVIL_API_KEY=yourKey dotnet run --project examples -- fill
 //
-// Set ANVIL_BASE_URL to use another environment, e.g. https://staging.useanvil.com.
+// Set ANVIL_BASE_URL to use another environment.
 using Anvil;
 
 var examples = new Dictionary<string, Func<AnvilClient, string[], Task>>(StringComparer.OrdinalIgnoreCase)
