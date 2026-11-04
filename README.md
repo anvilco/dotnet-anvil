@@ -46,7 +46,7 @@ var anvil = new AnvilClient(new AnvilClientOptions
     ApiKey = "API-KEY-FROM-SETTINGS",
     // Or an OAuth access token: AccessToken = "..."
     // Another environment; defaults to production, https://app.useanvil.com
-    // BaseUrl = "https://staging.useanvil.com",
+    // BaseUrl = "https://anvil.example.com",
 });
 
 // Any GraphQL query or mutation: returns the response's `data`

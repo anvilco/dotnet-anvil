@@ -30,12 +30,12 @@ namespace AnvilTests
         public void BaseUrl_DefaultsToProduction_AndDropsATrailingSlash()
         {
             using var production = Clients.Create(new FakeHandler());
-            using var staging = Clients.Create(new FakeHandler(), o => o.BaseUrl = "https://staging.useanvil.com/");
+            using var other = Clients.Create(new FakeHandler(), o => o.BaseUrl = "https://anvil.example.com/");
 
             Assert.Equal("https://app.useanvil.com", production.BaseUrl);
-            Assert.Equal("https://staging.useanvil.com", staging.BaseUrl);
-            Assert.Equal("https://staging.useanvil.com/graphql", staging.Url("/graphql"));
-            Assert.Equal("https://staging.useanvil.com/api/v1/fill/abc.pdf", staging.Url("api/v1/fill/abc.pdf"));
+            Assert.Equal("https://anvil.example.com", other.BaseUrl);
+            Assert.Equal("https://anvil.example.com/graphql", other.Url("/graphql"));
+            Assert.Equal("https://anvil.example.com/api/v1/fill/abc.pdf", other.Url("api/v1/fill/abc.pdf"));
         }
 
         [Theory]
@@ -58,9 +58,9 @@ namespace AnvilTests
         [Fact]
         public void Url_AcceptsAFullUrlOnTheBase_AndRefusesAnotherHost()
         {
-            using var client = Clients.Create(new FakeHandler(), o => o.BaseUrl = "https://staging.useanvil.com");
+            using var client = Clients.Create(new FakeHandler(), o => o.BaseUrl = "https://anvil.example.com");
 
-            Assert.Equal("https://staging.useanvil.com/api/v1/x", client.Url("https://staging.useanvil.com/api/v1/x"));
+            Assert.Equal("https://anvil.example.com/api/v1/x", client.Url("https://anvil.example.com/api/v1/x"));
             var ex = Assert.Throws<ArgumentException>(() => client.Url("https://evil.example.com/api/v1/x"));
             Assert.Contains("not on the client's base URL", ex.Message);
         }
@@ -71,17 +71,17 @@ namespace AnvilTests
             var handler = new FakeHandler()
                 .RespondJson(@"{""data"":{""ok"":true}}", ("X-RateLimit-Limit", "100"), ("X-RateLimit-Interval-Ms", "1000"))
                 .RespondPdf().RespondPdf().RespondJson("{}");
-            using var client = Clients.Create(handler, o => o.BaseUrl = "https://staging.useanvil.com");
+            using var client = Clients.Create(handler, o => o.BaseUrl = "https://anvil.example.com");
 
             await client.RequestGraphQLAsync("{ currentUser { eid } }");
             await client.RequestRestBytesAsync(HttpMethod.Post, "/api/v1/fill/cast1.pdf", new { data = new { } }, new Dictionary<string, string> { ["versionNumber"] = "-1" });
             await client.RequestRestBytesAsync(HttpMethod.Get, "/api/document-group/group1.zip");
             await client.RequestRestAsync(HttpMethod.Get, "api/v1/something?a=1", query: new Dictionary<string, string> { ["b"] = "two words" });
 
-            Assert.Equal("https://staging.useanvil.com/graphql", handler.Requests[0].Uri.AbsoluteUri);
-            Assert.Equal("https://staging.useanvil.com/api/v1/fill/cast1.pdf?versionNumber=-1", handler.Requests[1].Uri.AbsoluteUri);
-            Assert.Equal("https://staging.useanvil.com/api/document-group/group1.zip", handler.Requests[2].Uri.AbsoluteUri);
-            Assert.Equal("https://staging.useanvil.com/api/v1/something?a=1&b=two%20words", handler.Requests[3].Uri.AbsoluteUri);
+            Assert.Equal("https://anvil.example.com/graphql", handler.Requests[0].Uri.AbsoluteUri);
+            Assert.Equal("https://anvil.example.com/api/v1/fill/cast1.pdf?versionNumber=-1", handler.Requests[1].Uri.AbsoluteUri);
+            Assert.Equal("https://anvil.example.com/api/document-group/group1.zip", handler.Requests[2].Uri.AbsoluteUri);
+            Assert.Equal("https://anvil.example.com/api/v1/something?a=1&b=two%20words", handler.Requests[3].Uri.AbsoluteUri);
         }
 
         // ------------------------------------------------------------------
@@ -612,12 +612,12 @@ namespace AnvilTests
         public async Task TheOldClients_GoThroughAnvilClient()
         {
 #pragma warning disable CS0618
-            using var rest = new Anvil.Client.RestClient("old-key-" + Guid.NewGuid().ToString("N"), "https://staging.useanvil.com");
-            using var graphql = new Anvil.Client.GraphQLClient("old-key-" + Guid.NewGuid().ToString("N"), "https://staging.useanvil.com");
+            using var rest = new Anvil.Client.RestClient("old-key-" + Guid.NewGuid().ToString("N"), "https://anvil.example.com");
+            using var graphql = new Anvil.Client.GraphQLClient("old-key-" + Guid.NewGuid().ToString("N"), "https://anvil.example.com");
 #pragma warning restore CS0618
 
-            Assert.Equal("https://staging.useanvil.com", rest.Anvil.BaseUrl);
-            Assert.Equal("https://staging.useanvil.com", graphql.Anvil.BaseUrl);
+            Assert.Equal("https://anvil.example.com", rest.Anvil.BaseUrl);
+            Assert.Equal("https://anvil.example.com", graphql.Anvil.BaseUrl);
             Assert.Equal(ClientConstants.VERSION_LATEST, AnvilClient.VERSION_LATEST);
             Assert.Equal(ClientConstants.VERSION_LATEST_PUBLISHED, AnvilClient.VERSION_LATEST_PUBLISHED);
             await Task.CompletedTask;

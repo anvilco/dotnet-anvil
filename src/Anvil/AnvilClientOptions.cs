@@ -25,7 +25,7 @@ namespace Anvil
         public string? AccessToken { get; set; }
 
         /// <summary>
-        /// The environment's base URL, e.g. <c>https://staging.useanvil.com</c>.
+        /// The environment's base URL, when Anvil has given you one for another environment.
         /// Defaults to production, <c>https://app.useanvil.com</c>. Every request
         /// derives from it: REST requests go to <c>{BaseUrl}/api/v1/...</c>, GraphQL
         /// requests to <c>{BaseUrl}/graphql</c> and document downloads to

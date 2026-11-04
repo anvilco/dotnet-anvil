@@ -174,7 +174,7 @@ namespace AnvilTests
 
             var a = RateLimiter.Shared("https://app.useanvil.com", auth, 1, 1000);
             var b = RateLimiter.Shared("https://app.useanvil.com", auth, 9, 9000);
-            var otherHost = RateLimiter.Shared("https://staging.useanvil.com", auth, 1, 1000);
+            var otherHost = RateLimiter.Shared("https://anvil.example.com", auth, 1, 1000);
             var otherKey = RateLimiter.Shared("https://app.useanvil.com", auth + "x", 1, 1000);
 
             Assert.Same(a, b);
