@@ -36,6 +36,11 @@ namespace Anvil.Client
             _anvil = new AnvilClient(apiKey, baseUrl);
         }
 
+        internal GraphQLClient(AnvilClient anvil)
+        {
+            _anvil = anvil;
+        }
+
         /// <summary>The client the requests go through.</summary>
         public AnvilClient Anvil => _anvil;
 

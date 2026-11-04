@@ -35,6 +35,11 @@ namespace Anvil.Client
             _anvil = new AnvilClient(apiKey, baseUrl);
         }
 
+        internal RestClient(AnvilClient anvil)
+        {
+            _anvil = anvil;
+        }
+
         /// <summary>The client the requests go through.</summary>
         public AnvilClient Anvil => _anvil;
 

@@ -20,7 +20,7 @@ namespace Anvil.Payloads.Request
         [JsonProperty("mergePDFs")]
         public bool? MergePdfs { get; set; }
 
-        public EtchSigner[]? Signers { get; set; }
+        public Types.EtchSigner[]? Signers { get; set; }
         public object? Data { get; set; }
 
         [JsonProperty("webhookURL")]
