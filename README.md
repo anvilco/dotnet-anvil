@@ -39,26 +39,44 @@ Add as a package reference:
 ### Create a client instance
 
 ```cs
-using Anvil.Client;
+using Anvil;
 
-var apiKey = "API-KEY-FROM-SETTINGS";
+var anvil = new AnvilClient(new AnvilClientOptions
+{
+    ApiKey = "API-KEY-FROM-SETTINGS",
+    // Or an OAuth access token: AccessToken = "..."
+    // Another environment; defaults to production, https://app.useanvil.com
+    // BaseUrl = "https://staging.useanvil.com",
+});
 
-// For GraphQL-related queries
-var client = new GraphQLClient(apiKey);
+// Any GraphQL query or mutation: returns the response's `data`
+var data = await anvil.RequestGraphQLAsync("query { currentUser { eid } }");
 
-// If you are looking to use the PDF fill or PDF generate endpoints
-// use the REST Client.
-var restClient = new RestClient(apiKey);
+// Any REST request: JSON, bytes or a stream
+var pdf = await anvil.RequestRestBytesAsync(HttpMethod.Post, "/api/v1/generate-pdf", new
+{
+    data = new[] { new { content = "Hello" } },
+});
 ```
 
-Both clients take an optional base URL to use another Anvil environment. It
-defaults to production, `https://app.useanvil.com`, and every request derives
-from it: REST requests go to `{baseUrl}/api/v1/`, GraphQL requests to
-`{baseUrl}/graphql` and document downloads to `{baseUrl}/api/document-group/`.
+One client per API key: it is thread-safe, paces requests to the API's rate limit
+(learned from the first response's headers, retrying a `429` after its
+`Retry-After`), retries `5xx` and connection failures with backoff, and throws
+`AnvilClientException` for an error response, with the structured `Errors`,
+`StatusCode` and `Headers`.
+
+Every request derives from `BaseUrl`: REST requests go to `{BaseUrl}/api/v1/`,
+GraphQL requests to `{BaseUrl}/graphql` and document downloads to
+`{BaseUrl}/api/document-group/`.
+
+The `RestClient` and `GraphQLClient` of earlier versions still work, as thin
+wrappers over `AnvilClient`, and are obsolete:
 
 ```cs
-var client = new GraphQLClient(apiKey, "https://<your-environment-url>");
-var restClient = new RestClient(apiKey, "https://<your-environment-url>");
+using Anvil.Client;
+
+var client = new GraphQLClient(apiKey);
+var restClient = new RestClient(apiKey);
 ```
 
 ### Example usage

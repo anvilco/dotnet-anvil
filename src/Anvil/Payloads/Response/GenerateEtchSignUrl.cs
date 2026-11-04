@@ -1,10 +1,10 @@
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Anvil.Payloads.Response
 {
     public class GenerateEtchSignUrlPayload
     {
-        [JsonPropertyName("generateEtchSignURL")]
+        [JsonProperty("generateEtchSignURL")]
         public string? GenerateEtchSignUrl { get; set; }
     }
 }

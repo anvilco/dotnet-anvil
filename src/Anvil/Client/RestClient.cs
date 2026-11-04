@@ -1,21 +1,20 @@
 using System;
 using System.IO;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
-
 namespace Anvil.Client
 {
-    public class RestClient : BaseClient, IDisposable
+    /// <summary>
+    /// The pre-1.0 REST client, now a thin wrapper over <see cref="AnvilClient"/>,
+    /// which rate limits, retries and reports errors the same way for REST and
+    /// GraphQL. Use <see cref="AnvilClient"/> directly in new code.
+    /// </summary>
+    [Obsolete("Use AnvilClient, which has FillPdfAsync, GeneratePdfAsync and DownloadDocumentsAsync.")]
+    public class RestClient : IDisposable
     {
-        private readonly HttpClient _httpClient;
-        private readonly JsonSerializerSettings _jsonSerializerSettings;
+        private readonly AnvilClient _anvil;
         private bool _disposed;
 
         public RestClient(string apiKey) : this(apiKey, null)
@@ -33,256 +32,103 @@ namespace Anvil.Client
         /// </param>
         public RestClient(string apiKey, string? baseUrl)
         {
-            _apiKey = apiKey;
-            var encodedKey = EncodeApiKey();
-            var httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri(Constants.RestEndpoint(baseUrl));
-            httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Basic {encodedKey}");
-            httpClient.DefaultRequestHeaders.Accept.Clear();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _httpClient = httpClient;
-
-            // Default all JSON serialization to be `camelCase`. 
-            // Classes representing payload data uses the typical `PascalCase`
-            // C# standard and this is what we almost always want.
-            DefaultContractResolver contractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy()
-            };
-
-            _jsonSerializerSettings = new JsonSerializerSettings
-            {
-                ContractResolver = contractResolver,
-                NullValueHandling = NullValueHandling.Ignore
-            };
-
-            // If using the `System.Text.Json` serializer, we should use these options:
-            //
-            // _jsonSerializerOptions = new JsonSerializerOptions()
-            // {
-            //     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            //     PropertyNameCaseInsensitive = true,
-            //     IgnoreNullValues = true,
-            // };
+            _anvil = new AnvilClient(apiKey, baseUrl);
         }
 
-        private async Task<Exception> CreateExceptionFromResponse(HttpResponseMessage response)
+        /// <summary>The client the requests go through.</summary>
+        public AnvilClient Anvil => _anvil;
+
+        // Pre-1.0 paths were relative to /api/v1/, unless they started with a slash
+        private static string Path(string uri) => uri.StartsWith("/") ? uri : "/api/v1/" + uri;
+
+        /// <summary>GETs the URI (relative to <c>/api/v1/</c>) and returns the response, throwing <see cref="AnvilClientException"/> on an error status.</summary>
+        public Task<HttpResponseMessage> SendGetRequest(string uri)
         {
-            var statusCode = response.StatusCode;
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var ex = new AnvilClientException($"Error: {statusCode}")
-            {
-                HttpStatusCode = statusCode,
-                ResponseContent = responseContent
-            };
-
-            // Copy response headers into the exception
-            if (response.Headers != null)
-            {
-                ex.ResponseHeaders = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>(System.StringComparer.OrdinalIgnoreCase);
-                foreach (var header in response.Headers)
-                {
-                    ex.ResponseHeaders[header.Key] = header.Value;
-                }
-                // Also include content headers if present
-                if (response.Content?.Headers != null)
-                {
-                    foreach (var header in response.Content.Headers)
-                    {
-                        ex.ResponseHeaders[header.Key] = header.Value;
-                    }
-                }
-            }
-
-            // Try to parse JSON error response, but handle non-JSON gracefully
-            try
-            {
-                var httpErrorResponse = JsonConvert.DeserializeObject(responseContent) as JObject;
-                if (httpErrorResponse != null)
-                {
-                    var errors = httpErrorResponse["errors"] as JArray;
-                    if (errors != null)
-                    {
-                        var count = 1;
-                        foreach (var item in errors)
-                        {
-                            var message = item["message"]?.ToString();
-                            if (message != null)
-                            {
-                                ex.Data.Add($"Message{count}", message);
-                                count += 1;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (JsonException)
-            {
-                // Response is not JSON, which is fine for some error responses (e.g., 429 rate limits)
-                // The raw content is already captured in ResponseContent property
-                ex.Data.Add("RawContent", responseContent);
-            }
-
-            if (statusCode == HttpStatusCode.NotFound)
-            {
-                // Doesn't return JSON for this error...
-                if (!ex.Data.Contains("Not Found"))
-                {
-                    ex.Data.Add("Not Found", "");
-                }
-            }
-
-            return ex;
+            return _anvil.SendRestAsync(HttpMethod.Get, Path(uri));
         }
 
-        public async Task<HttpResponseMessage> SendGetRequest(string uri)
-        {
-            var response = await _httpClient.GetAsync(uri);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var exc = await CreateExceptionFromResponse(response);
-                throw exc;
-            }
-
-            return response;
-        }
-
-        private StringContent SerializePayload<T>(T payload)
-        {
-            return new StringContent(
-                JsonConvert.SerializeObject(payload, _jsonSerializerSettings),
-                Encoding.UTF8,
-                "application/json"
-            );
-        }
-
-        /// <summary>
-        /// POSTs an HTTP request to the given URI.
-        /// </summary>
-        /// <param name="uri"></param>
-        /// <param name="content"></param>
-        /// <returns></returns>
+        /// <summary>POSTs to the URI (relative to <c>/api/v1/</c>) and returns the response, throwing <see cref="AnvilClientException"/> on an error status.</summary>
         public async Task<HttpResponseMessage> SendPostRequest(string uri, StringContent content)
         {
-            var response = await _httpClient.PostAsync(uri, content);
-
-            // TODO: Better error handling
-            if (!response.IsSuccessStatusCode)
-            {
-                // Failed call, so create a custom exception for this.
-                var exc = await CreateExceptionFromResponse(response);
-                throw exc;
-            }
-
-            return response;
+            // Re-created per attempt, since the request may be retried
+            var body = await content.ReadAsStringAsync().ConfigureAwait(false);
+            var mediaType = content.Headers.ContentType?.MediaType ?? "application/json";
+            return await _anvil.SendRestAsync(HttpMethod.Post, Path(uri), () => new StringContent(body, Encoding.UTF8, mediaType)).ConfigureAwait(false);
         }
 
-        private async Task<HttpResponseMessage> DoFillPdf(string templateId, Payloads.Request.FillPdf payload)
+        public Task<Stream> FillPdf(string templateId, Payloads.Request.FillPdf payload)
         {
-            var uri = string.Format(Constants.FillPdf, templateId);
-            var json = SerializePayload(payload);
-            return await SendPostRequest(uri, json);
-        }
-
-        private async Task<HttpResponseMessage> DoFillPdf(string templateId, Payloads.Request.FillPdf payload,
-            int versionNumber)
-        {
-            var uri = string.Format(Constants.FillPdf, templateId);
-            uri = $"{uri}?versionNumber={versionNumber}";
-            var json = SerializePayload(payload);
-            return await SendPostRequest(uri, json);
-        }
-
-        public async Task<Stream> FillPdf(string templateId, Payloads.Request.FillPdf payload)
-        {
-            var response = await DoFillPdf(templateId, payload);
-
-            // response will contain the resulting PDF in bytes if it was successful.
-            return await response.Content.ReadAsStreamAsync();
+            return _anvil.RequestRestStreamAsync(HttpMethod.Post, string.Format(Constants.FillPdf, templateId), payload);
         }
 
         public async Task<bool> FillPdf(string templateId, Payloads.Request.FillPdf payload, string destFile)
         {
-            var stream = await FillPdf(templateId, payload);
-
-            using (FileStream outputFileStream = new FileStream(destFile, FileMode.Create))
+            using (var stream = await FillPdf(templateId, payload).ConfigureAwait(false))
             {
-                await stream.CopyToAsync(outputFileStream);
+                await WriteFile(stream, destFile).ConfigureAwait(false);
             }
 
             return true;
         }
 
-        public async Task<Stream> FillPdf(string templateId, Payloads.Request.FillPdf payload, int versionNumber)
+        public Task<Stream> FillPdf(string templateId, Payloads.Request.FillPdf payload, int versionNumber)
         {
-            var response = await DoFillPdf(templateId, payload, versionNumber);
-
-            // response will contain the resulting PDF in bytes if it was successful.
-            return await response.Content.ReadAsStreamAsync();
+            var query = new System.Collections.Generic.Dictionary<string, string> { ["versionNumber"] = versionNumber.ToString() };
+            return _anvil.RequestRestStreamAsync(HttpMethod.Post, string.Format(Constants.FillPdf, templateId), payload, query);
         }
 
-        public async Task<bool> FillPdf(string templateId, Payloads.Request.FillPdf payload, string destFile,
-            int versionNumber)
+        public async Task<bool> FillPdf(string templateId, Payloads.Request.FillPdf payload, string destFile, int versionNumber)
         {
-            var stream = await FillPdf(templateId, payload, versionNumber);
-
-            using (FileStream outputFileStream = new FileStream(destFile, FileMode.Create))
+            using (var stream = await FillPdf(templateId, payload, versionNumber).ConfigureAwait(false))
             {
-                await stream.CopyToAsync(outputFileStream);
+                await WriteFile(stream, destFile).ConfigureAwait(false);
             }
 
             return true;
-        }
-
-
-        private async Task<HttpResponseMessage> DoGeneratePdf(Payloads.Request.GeneratePdf payload)
-        {
-            var uri = Constants.GeneratePdf;
-            var json = SerializePayload(payload);
-            return await SendPostRequest(uri, json);
         }
 
         public async Task<HttpContent> GeneratePdf(Payloads.Request.GeneratePdf payload)
         {
-            var response = await DoGeneratePdf(payload);
-
-            // response will contain the resulting PDF in bytes if it was successful.
+            var response = await _anvil.SendRestAsync(HttpMethod.Post, Constants.GeneratePdf, JsonContent(payload)).ConfigureAwait(false);
             return response.Content;
         }
 
-        /// <summary>
-        /// Sends a GeneratePDF request and saves the resulting data in the provided path.
-        /// </summary>
-        /// <param name="payload"></param>
-        /// <param name="destFile"></param>
-        /// <returns></returns>
+        /// <summary>Sends a GeneratePDF request and saves the resulting data in the provided path.</summary>
         public async Task<bool> GeneratePdf(Payloads.Request.GeneratePdf payload, string destFile)
         {
-            var stream = await GeneratePdf(payload);
-
-            using (FileStream outputFileStream = new FileStream(destFile, FileMode.Create))
+            var content = await GeneratePdf(payload).ConfigureAwait(false);
+            using (var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
             {
-                await stream.CopyToAsync(outputFileStream);
+                await WriteFile(stream, destFile).ConfigureAwait(false);
             }
 
             return true;
         }
 
-        public async Task<Stream> DownloadDocuments(string documentGroupEid)
+        public Task<Stream> DownloadDocuments(string documentGroupEid)
         {
-            var uri = string.Format(Constants.DownloadDocuments, documentGroupEid);
-            var stream = await SendGetRequest(uri);
+            return _anvil.RequestRestStreamAsync(HttpMethod.Get, string.Format(Constants.DownloadDocuments, documentGroupEid));
+        }
 
-            return await stream.Content.ReadAsStreamAsync();
+        private static Func<HttpContent?> JsonContent(object payload)
+        {
+            var body = Newtonsoft.Json.JsonConvert.SerializeObject(payload, AnvilClient.SerializerSettings);
+            return () => AnvilClient.JsonContent(body);
+        }
+
+        private static async Task WriteFile(Stream stream, string destFile)
+        {
+            using (var output = new FileStream(destFile, FileMode.Create))
+            {
+                await stream.CopyToAsync(output).ConfigureAwait(false);
+            }
         }
 
         public void Dispose()
         {
             if (!_disposed)
             {
-                _httpClient.Dispose();
+                _anvil.Dispose();
                 _disposed = true;
             }
         }

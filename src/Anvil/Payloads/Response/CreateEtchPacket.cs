@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 using Newtonsoft.Json.Linq;
 
@@ -16,7 +16,7 @@ namespace Anvil.Payloads.Response
 
         public string? Name { get; set; }
 
-        [JsonPropertyName("detailsURL")]
+        [JsonProperty("detailsURL")]
         public string? DetailsUrl { get; set; }
 
         public JObject? DocumentGroup { get; set; }
