@@ -1,0 +1,12 @@
+{
+  "name": "dotnet-anvil-dev",
+  "private": true,
+  "description": "Development scripts for dotnet-anvil. Not published.",
+  "type": "module",
+  "scripts": {
+    "check:graphql": "node check-graphql.mjs"
+  },
+  "dependencies": {
+    "graphql": "^16.11.0"
+  }
+}

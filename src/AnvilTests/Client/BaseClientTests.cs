@@ -51,7 +51,7 @@ namespace AnvilTests.Client
         {
             _client.ApiKey = "my-api-key";
             const string expected = "bXktYXBpLWtleQ==";
-            Assert.Equal(_client.EncodeApiKey(), expected);
+            Assert.Equal(expected, _client.EncodeApiKey());
         }
     }
 }

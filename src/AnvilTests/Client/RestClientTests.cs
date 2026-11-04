@@ -5,8 +5,6 @@ using System.Threading.Tasks;
 using Anvil.Client;
 using Anvil.Payloads;
 
-using Moq;
-
 using Xunit;
 
 namespace AnvilTests.Client

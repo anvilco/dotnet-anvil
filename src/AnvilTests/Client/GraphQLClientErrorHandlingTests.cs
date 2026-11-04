@@ -152,7 +152,7 @@ namespace AnvilTests.Client
             var result = GraphQLClient.WrapGraphQLException(ex);
 
             Assert.Equal("real error", result.Message);
-            Assert.Equal(1, result.Data.Count);
+            Assert.Single(result.Data);
             Assert.Equal("real error", result.Data["Message1"]);
         }
     }
