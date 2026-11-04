@@ -233,8 +233,32 @@ await Check("FillPdfStreamAsync", async () =>
     return AssertPdf(buffer.ToArray());
 });
 
-await Check("CreateEtchPacketAsync (multipart upload)", () =>
-    throw new Skip("Phase 4: multipart GraphQL file uploads are not supported yet (#26)"));
+await Check("CreateEtchPacketAsync (multipart upload)", async () =>
+{
+    // The PDF goes as a multipart file part, per the GraphQL multipart request spec
+    var packet = await anvil.CreateEtchPacketAsync(new CreateEtchPacketPayload
+    {
+        Name = "Anvil .NET client test",
+        IsTest = true,
+        // Send it right away, so it has signers that can sign
+        IsDraft = false,
+        Files = new List<EtchFile>
+        {
+            new DocumentUpload
+            {
+                Id = "testFile",
+                Title = "Test File",
+                File = AnvilClient.PrepareGraphQLFile(pdfToSign),
+                Fields = new List<object> { SignatureBox() },
+            },
+        },
+        Signers = new List<object> { EmbeddedSigner() },
+    });
+    etchPacketEid = packet.Eid;
+    documentGroupEid = packet.DocumentGroup?.Eid;
+    signerEid = packet.DocumentGroup?.Signers?.FirstOrDefault()?.Eid;
+    return etchPacketEid ?? throw new Exception("Expected an eid");
+});
 
 await Check("CreateEtchPacketAsync (base64 upload)", async () =>
 {
@@ -243,8 +267,7 @@ await Check("CreateEtchPacketAsync (base64 upload)", async () =>
     {
         Name = "Anvil .NET client test (base64 upload)",
         IsTest = true,
-        // Send it right away, so it has signers that can sign
-        IsDraft = false,
+        IsDraft = true,
         Files = new List<EtchFile>
         {
             new DocumentUpload
@@ -261,10 +284,7 @@ await Check("CreateEtchPacketAsync (base64 upload)", async () =>
         },
         Signers = new List<object> { EmbeddedSigner() },
     });
-    etchPacketEid = packet.Eid;
-    documentGroupEid = packet.DocumentGroup?.Eid;
-    signerEid = packet.DocumentGroup?.Signers?.FirstOrDefault()?.Eid;
-    return etchPacketEid ?? throw new Exception("Expected an eid");
+    return $"draft {packet.Eid}";
 });
 
 await Check("CreateEtchPacketAsync (in-person signer)", async () =>
@@ -300,8 +320,31 @@ await Check("CreateEtchPacketAsync (in-person signer)", async () =>
     return $"draft {packet.Eid}";
 });
 
-await Check("RequestGraphQLAsync (createCast upload)", () =>
-    throw new Skip("Phase 4: multipart GraphQL file uploads are not supported yet (#26)"));
+await Check("RequestGraphQLAsync (multipart upload)", async () =>
+{
+    // The scenario of #26: a file prepared for upload in the variables of any
+    // mutation sent with the generic method, here a draft packet with an upload
+    var data = await anvil.RequestGraphQLAsync(@"
+        mutation TestClientUpload($name: String, $files: [EtchFile!], $signers: [JSON!]) {
+          createEtchPacket(name: $name, isDraft: true, isTest: true, files: $files, signers: $signers) { eid }
+        }",
+        new
+        {
+            name = "Anvil .NET client test (RequestGraphQLAsync upload)",
+            files = new[]
+            {
+                new
+                {
+                    id = "testFile",
+                    title = "Test File",
+                    file = AnvilClient.PrepareGraphQLFile(System.IO.File.ReadAllBytes(pdfToSign), "dummy.pdf"),
+                    fields = new[] { SignatureBox() },
+                },
+            },
+            signers = new[] { EmbeddedSigner() },
+        });
+    return $"draft {data["createEtchPacket"]?["eid"] ?? throw new Exception("Expected an eid")}";
+});
 
 await Check("GetEtchPacketAsync", async () =>
 {

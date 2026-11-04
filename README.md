@@ -67,6 +67,18 @@ var packet = await anvil.CreateEtchPacketAsync(new CreateEtchPacketPayload
     },
 });
 
+// Upload a PDF to sign: a multipart upload, prepared from a path, bytes or a stream
+var upload = new DocumentUpload
+{
+    Id = "upload",
+    Title = "Please sign",
+    File = AnvilClient.PrepareGraphQLFile("/path/to/file.pdf"),
+    Fields = new List<object>
+    {
+        new SignatureField { Id = "sig1", Type = "signature", PageNum = 0, Rect = new Rect { X = 100, Y = 100, Width = 150, Height = 30 } },
+    },
+};
+
 // Any GraphQL query or mutation: returns the response's `data`
 var data = await anvil.RequestGraphQLAsync("query { currentUser { eid } }");
 
