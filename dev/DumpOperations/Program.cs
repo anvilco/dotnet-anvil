@@ -1,6 +1,6 @@
 // Prints every GraphQL operation the client sends, as a JSON object of
 // operation name to document, for dev/check-graphql.mjs to validate against
-// the schema in schema/anvil_schema.graphql.
+// the schema that ships with @anvilco/types.
 using Anvil.GraphQL;
 
 using Newtonsoft.Json;
