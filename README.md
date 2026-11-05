@@ -352,9 +352,9 @@ Everything it creates is test data. It creates test Etch packets each run, and r
 
 ### Checking the GraphQL operations against the schema
 
-The GraphQL schema comes from the [`@anvilco/types`](https://www.npmjs.com/package/@anvilco/types)
-npm package, a dependency of `dev/`, and `schema/openapi.json` is the API's
-OpenAPI spec. `dev/fetch-schema.sh` refreshes both (no API key needed). CI
+The API's GraphQL schema and OpenAPI spec come from the
+[`@anvilco/types`](https://www.npmjs.com/package/@anvilco/types) npm package, a
+dependency of `dev/` that `dev/fetch-schema.sh` bumps (no API key needed). CI
 validates every query and mutation the client sends against the schema:
 
 ```bash
