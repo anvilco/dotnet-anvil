@@ -1,7 +1,8 @@
 name: Sync API Types
 
-# Refreshes schema/ from the live Anvil API and the published @anvilco/types,
-# regenerates src/Anvil/Types, and opens one PR when any of it changed.
+# Refreshes the API specs (the @anvilco/types dependency in dev/, which ships
+# the GraphQL schema, and schema/openapi.json from the live API), regenerates
+# src/Anvil/Types, and opens one PR when any of it changed.
 # Runs after a production rollout completes: Foundry's postsync step sends
 # `anvil-production-deploy` to every repo in its --webhook-repos list
 # (anvil-infra: k8s/anvil/base/foundry/postsync.yaml). That dispatch is
@@ -20,7 +21,8 @@ concurrency: sync-api-types
 
 env:
   BRANCH: chore/sync-api-types
-  SCHEMA_DIR: schema
+  # The specs: the OpenAPI spec, and the package that ships the GraphQL schema
+  SPEC_PATHS: schema dev/package.json dev/package-lock.json
   TYPES_DIR: src/Anvil/Types
 
 jobs:
@@ -61,12 +63,12 @@ jobs:
 
       - name: Discard the output if that failed
         if: steps.generate.outcome != 'success'
-        run: git checkout -- "$SCHEMA_DIR" "$TYPES_DIR"
+        run: git checkout -- $SPEC_PATHS "$TYPES_DIR"
 
       - name: Check for changes
         id: changes
         run: |
-          echo "changed=$(git diff --quiet -- "$SCHEMA_DIR" "$TYPES_DIR" && echo false || echo true)" >> "$GITHUB_OUTPUT"
+          echo "changed=$(git diff --quiet -- $SPEC_PATHS "$TYPES_DIR" && echo false || echo true)" >> "$GITHUB_OUTPUT"
           git diff --stat
 
       - name: Open or update PR
@@ -86,7 +88,7 @@ jobs:
           # an identical commit, re-running CI and discarding any edits made
           # on the branch.
           PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
-          if [ -n "$PR" ] && git fetch -q --depth=1 origin "$BRANCH" && git diff --quiet FETCH_HEAD -- "$SCHEMA_DIR" "$TYPES_DIR"; then
+          if [ -n "$PR" ] && git fetch -q --depth=1 origin "$BRANCH" && git diff --quiet FETCH_HEAD -- $SPEC_PATHS "$TYPES_DIR"; then
             echo "PR #$PR already has this output"
             exit 0
           fi
@@ -114,7 +116,7 @@ jobs:
           {
             echo "Automated sync of the generated types from the production Anvil API. Triggered by $TRIGGER"
             echo
-            echo "- \`$SCHEMA_DIR/\`: the GraphQL schema (from the published \`@anvilco/types\`) and the OpenAPI spec"
+            echo "- \`dev/package.json\`: the \`@anvilco/types\` dependency, which ships the GraphQL schema, bumped to the published version; \`schema/openapi.json\`: the OpenAPI spec"
             echo "- \`$TYPES_DIR/\`: regenerated from them with \`npm run generate\` in \`dev/\`"
             echo
             echo "If a type or field was removed or renamed, note it under Unreleased in CHANGELOG.md as a breaking change before merging."
@@ -125,7 +127,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B "$BRANCH"
-          git add -A -- "$SCHEMA_DIR" "$TYPES_DIR" CHANGELOG.md
+          git add -A -- $SPEC_PATHS "$TYPES_DIR" CHANGELOG.md
           git commit -m "Sync the generated API types from production"
           git push --force origin "$BRANCH"
 

@@ -352,14 +352,14 @@ Everything it creates is test data. It creates test Etch packets each run, and r
 
 ### The generated types
 
-`src/Anvil/Types` is generated from the API specs in `schema/`: `Anvil.Types.Rest` has the REST request bodies (`FillPdfRequest`, `GenerateMarkdownPdfRequest`, `EtchSigner`, ...), `Anvil.Types.GraphQL` every type in the GraphQL schema, and `Anvil.Types.Operations` the arguments of every query and mutation (`CreateEtchPacketArgs`, ...). Enums are string properties with a nested `*Values` class of the documented constants, so a value the API adds later is accepted. Unknown JSON members are kept in `AdditionalData`.
+`src/Anvil/Types` is generated from the API specs (the GraphQL schema in `@anvilco/types`, the OpenAPI spec in `schema/openapi.json`): `Anvil.Types.Rest` has the REST request bodies (`FillPdfRequest`, `GenerateMarkdownPdfRequest`, `EtchSigner`, ...), `Anvil.Types.GraphQL` every type in the GraphQL schema, and `Anvil.Types.Operations` the arguments of every query and mutation (`CreateEtchPacketArgs`, ...). Enums are string properties with a nested `*Values` class of the documented constants, so a value the API adds later is accepted. Unknown JSON members are kept in `AdditionalData`.
 
 ```bash
-dev/fetch-schema.sh      # refresh schema/ from @anvilco/types and production
-cd dev && npm run generate   # regenerate src/Anvil/Types from schema/
+dev/fetch-schema.sh      # bump @anvilco/types and refresh schema/openapi.json from production
+cd dev && npm run generate   # regenerate src/Anvil/Types from them
 ```
 
-`npm run generate` runs offline, and CI fails if the generated files don't match `schema/`, so run it after changing anything in `schema/` or `dev/generate-types.mjs`.
+`npm run generate` runs offline, and CI fails if the generated files don't match the specs, so run it after `dev/fetch-schema.sh` or after changing `dev/generate-types.mjs`.
 
 The [Sync API Types workflow](.github/workflows/sync-api-types.yml) does both steps after each Anvil production deploy, and weekly as a backstop, and opens a PR when anything changed. It needs a `CI_GITHUB_TOKEN` repository secret (a token that can push branches and open PRs, so the PR gets its CI checks; python-anvil and anvil-js use the same secret name), and `dotnet-anvil` in the `--webhook-repos` list of Foundry's postsync step in anvil-infra, which sends the `anvil-production-deploy` dispatch. Until then, only the weekly run and manual runs happen.
 

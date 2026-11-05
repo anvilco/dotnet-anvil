@@ -81,7 +81,7 @@ jobs:
       - run: npm ci
         working-directory: dev
 
-      - name: Check the generated types are up to date with schema/
+      - name: Check the generated types are up to date with the API specs
         run: npm run check:generated
         working-directory: dev
 
