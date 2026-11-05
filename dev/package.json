@@ -7,6 +7,7 @@
     "check:graphql": "node check-graphql.mjs"
   },
   "dependencies": {
+    "@anvilco/types": "0.2.3",
     "graphql": "^16.11.0"
   }
 }

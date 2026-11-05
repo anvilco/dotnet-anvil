@@ -11,6 +11,9 @@ updates:
     directory: /dev
     schedule:
       interval: weekly
+    ignore:
+      # Bumped by the Sync API Types workflow, which also regenerates the types
+      - dependency-name: "@anvilco/types"
   - package-ecosystem: github-actions
     directory: /
     schedule:

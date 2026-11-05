@@ -1,7 +1,6 @@
-// Validates the client's GraphQL operations against the Anvil schema in
-// schema/anvil_schema.graphql (the copy published in @anvilco/types, see
-// dev/fetch-schema.sh), so a query or mutation that no longer matches the API
-// fails the build rather than a request.
+// Validates the client's GraphQL operations against the Anvil schema that
+// ships with @anvilco/types (see dev/fetch-schema.sh), so a query or mutation
+// that no longer matches the API fails the build rather than a request.
 //
 // The operations are read from the client itself: dev/DumpOperations is a
 // console app that references the Anvil project and prints every operation as
@@ -10,14 +9,16 @@
 // Usage: cd dev && npm ci && npm run check:graphql
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { buildSchema, parse, validate } from 'graphql'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const require = createRequire(import.meta.url)
 
-const schema = buildSchema(readFileSync(path.join(root, 'schema', 'anvil_schema.graphql'), 'utf8'))
+const schema = buildSchema(readFileSync(require.resolve('@anvilco/types/schema.graphql'), 'utf8'))
 
 const dump = execFileSync('dotnet', ['run', '--project', path.join(root, 'dev', 'DumpOperations')], {
   cwd: root,
@@ -44,6 +45,6 @@ for (const [name, document] of Object.entries(operations)) {
 }
 
 if (failed) {
-  console.error('\nSome operations do not match the Anvil schema in schema/anvil_schema.graphql.')
+  console.error('\nSome operations do not match the Anvil schema in @anvilco/types.')
   process.exit(1)
 }
