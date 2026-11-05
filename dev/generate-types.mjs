@@ -1,13 +1,14 @@
-// Generates src/Anvil/Types from the API specs:
+// Generates src/Anvil/Types from the API specs that ship with the
+// @anvilco/types dependency in dev/ (see dev/fetch-schema.sh):
 //
-// - Types/Rest/*.cs: the REST API's request bodies, from schema/openapi.json.
-// - Types/GraphQL/*.cs: every object and input type in the GraphQL schema,
-//   from the schema that ships with the @anvilco/types dependency in dev/.
+// - Types/Rest/*.cs: the REST API's request bodies, from its openapi.json
+//   (or schema/openapi.json while the installed version predates it).
+// - Types/GraphQL/*.cs: every object and input type in its GraphQL schema.
 // - Types/Operations/*.cs: the arguments of every query and mutation, e.g.
 //   CreateEtchPacketArgs, from the same schema, plus OperationNames.
 //
-// Reads the installed package and the checked-in spec only, so this runs
-// offline. dev/fetch-schema.sh is what refreshes them.
+// Reads the installed package only, so this runs offline. dev/fetch-schema.sh
+// is what bumps it.
 //
 // Every generated class is partial and extends Anvil.Types.GeneratedModel, so
 // the hand-written payload types can extend them and unknown JSON members are
@@ -28,8 +29,18 @@ const SCHEMA_PATH = require.resolve('@anvilco/types/schema.graphql')
 const SCHEMA_VERSION = JSON.parse(readFileSync(path.join(path.dirname(SCHEMA_PATH), '..', 'package.json'), 'utf8')).version
 // What the generated files say they came from
 const SCHEMA_SOURCE = `@anvilco/types@${SCHEMA_VERSION} schema.graphql`
-const OPENAPI_PATH = path.join(root, 'schema', 'openapi.json')
-const OPENAPI_SOURCE = path.relative(root, OPENAPI_PATH)
+// Older versions of the package don't ship the OpenAPI spec; dev/fetch-schema.sh
+// puts a copy from production in schema/ for them
+const { OPENAPI_PATH, OPENAPI_SOURCE } = resolveOpenApi()
+
+function resolveOpenApi() {
+  try {
+    return { OPENAPI_PATH: require.resolve('@anvilco/types/openapi.json'), OPENAPI_SOURCE: `@anvilco/types@${SCHEMA_VERSION} openapi.json` }
+  } catch {
+    const fallback = path.join(root, 'schema', 'openapi.json')
+    return { OPENAPI_PATH: fallback, OPENAPI_SOURCE: path.relative(root, fallback) }
+  }
+}
 const TYPES_DIR = path.join(root, 'src', 'Anvil', 'Types')
 
 const INDENT = '    '
