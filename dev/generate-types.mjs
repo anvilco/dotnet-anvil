@@ -21,7 +21,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { buildSchema, isInputObjectType, isListType, isNonNullType, isObjectType, isScalarType } from 'graphql'
+import { buildSchema, isInputObjectType, isListType, isNonNullType, isObjectType, isScalarType, valueFromAST } from 'graphql'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const require = createRequire(import.meta.url)
@@ -222,6 +222,16 @@ function graphqlDefault(value) {
   return JSON.stringify(value)
 }
 
+// The default value of an input field or argument, or undefined when it has
+// none. graphql 16 exposes it as `defaultValue`; 17 keeps the schema's literal
+// under `default` instead.
+function defaultOf(fieldOrArg) {
+  if (fieldOrArg.defaultValue !== undefined) return fieldOrArg.defaultValue
+  const { default: def } = fieldOrArg
+  if (!def) return undefined
+  return def.value !== undefined ? def.value : valueFromAST(def.literal, fieldOrArg.type)
+}
+
 function generateGraphql(schema) {
   const dir = path.join(TYPES_DIR, 'GraphQL')
   clean(dir)
@@ -236,14 +246,15 @@ function generateGraphql(schema) {
     const cls = new ClassBuilder(type.name, { description: type.description })
     for (const field of Object.values(type.getFields())) {
       const descriptions = [field.description?.trim()].filter(Boolean)
-      if (isInput && field.defaultValue !== undefined) {
-        descriptions.push(`Defaults to \`${graphqlDefault(field.defaultValue)}\` when left out.`)
+      const defaultValue = isInput ? defaultOf(field) : undefined
+      if (defaultValue !== undefined) {
+        descriptions.push(`Defaults to \`${graphqlDefault(defaultValue)}\` when left out.`)
       }
       cls.addProperty({
         jsonName: field.name,
         type: graphqlType(field.type, isInput ? 'object' : 'JToken'),
         description: descriptions.join('\n\n'),
-        required: isInput && isNonNullType(field.type) && field.defaultValue === undefined,
+        required: isInput && isNonNullType(field.type) && defaultValue === undefined,
         deprecated: field.deprecationReason ?? null,
       })
     }
@@ -277,14 +288,15 @@ function generateOperations(schema) {
       const cls = new ClassBuilder(className, { description })
       for (const arg of field.args) {
         const descriptions = [arg.description?.trim()].filter(Boolean)
-        if (arg.defaultValue !== undefined) {
-          descriptions.push(`Defaults to \`${graphqlDefault(arg.defaultValue)}\` when left out.`)
+        const defaultValue = defaultOf(arg)
+        if (defaultValue !== undefined) {
+          descriptions.push(`Defaults to \`${graphqlDefault(defaultValue)}\` when left out.`)
         }
         cls.addProperty({
           jsonName: arg.name,
           type: graphqlType(arg.type, 'object'),
           description: descriptions.join('\n\n'),
-          required: isNonNullType(arg.type) && arg.defaultValue === undefined,
+          required: isNonNullType(arg.type) && defaultValue === undefined,
           deprecated: arg.deprecationReason ?? null,
         })
       }
