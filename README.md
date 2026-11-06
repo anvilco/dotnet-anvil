@@ -51,6 +51,16 @@ var client = new GraphQLClient(apiKey);
 var restClient = new RestClient(apiKey);
 ```
 
+Both clients take an optional base URL to use another Anvil environment. It
+defaults to production, `https://app.useanvil.com`, and every request derives
+from it: REST requests go to `{baseUrl}/api/v1/`, GraphQL requests to
+`{baseUrl}/graphql` and document downloads to `{baseUrl}/api/document-group/`.
+
+```cs
+var client = new GraphQLClient(apiKey, "https://<your-environment-url>");
+var restClient = new RestClient(apiKey, "https://<your-environment-url>");
+```
+
 ### Example usage
 
 Also see [the example in the `examples/` directory](./examples/Example.cs).
@@ -309,4 +319,46 @@ var query = @"
 // and won't follow the typical C# PascalCase as in the defined
 // types in this library.
 var response = await client.SendQuery(query, null);
+```
+
+## Development
+
+Build and run the unit tests from the `src` directory:
+
+```bash
+cd src
+dotnet build
+dotnet test
+dotnet format --verify-no-changes
+```
+
+### Testing against a real environment
+
+`test-client/` is a console app that runs every client method against an Anvil
+environment and prints a `PASS`, `FAIL` or `SKIP` for each. Run it on a release
+before and after a change to see which behaviors changed. It uses staging by
+default, and needs an API key for that environment:
+
+```bash
+ANVIL_API_KEY=<your staging API key> dotnet run --project test-client
+```
+
+* `ANVIL_BASE_URL` - _optional_ Test another environment instead, e.g. `http://localhost:3000`.
+* `ANVIL_ACCESS_TOKEN` - _optional_ An OAuth access token for the same environment, to test Bearer auth.
+* `ANVIL_PDF_TEMPLATE_ID` - _optional_ The PDF template to test `FillPdf` with. Defaults to the first template in your organization that has example data.
+* `ANVIL_FORGE_EID` - _optional_ The webform (Forge) in a Workflow to test `ForgeSubmit` with. Defaults to the first one in your organization.
+
+Everything it creates is test data. It creates test Etch packets each run, and removes the Workflow submission it creates.
+
+### Checking the GraphQL operations against the schema
+
+The API's GraphQL schema and OpenAPI spec come from the
+[`@anvilco/types`](https://www.npmjs.com/package/@anvilco/types) npm package, a
+dependency of `dev/` that `dev/fetch-schema.sh` bumps (no API key needed). CI
+validates every query and mutation the client sends against the schema:
+
+```bash
+cd dev
+npm ci
+npm run check:graphql
 ```
