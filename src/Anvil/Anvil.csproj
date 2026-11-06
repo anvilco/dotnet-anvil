@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Authors>useanvil.com, Allan Almazan</Authors>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
         <PackageVersion>0.6.0</PackageVersion>
         <PackageId>Anvil</PackageId>
         <Version>0.6.0</Version>
@@ -13,7 +13,7 @@
         <RepositoryBranch>main</RepositoryBranch>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>images/icon.png</PackageIcon>
-        <LangVersion>8</LangVersion>
+        <LangVersion>latest</LangVersion>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -23,9 +23,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="GraphQL.Client" Version="4.0.2" />
-        <PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="4.0.2" />
-        <PackageReference Include="GraphQL.Client.Serializer.SystemTextJson" Version="4.0.2" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <None Include="../../README.md" Pack="true" PackagePath="/" />
         <None Include="../../images/icon.png" Pack="true" PackagePath="/images" />

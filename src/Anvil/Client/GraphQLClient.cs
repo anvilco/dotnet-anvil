@@ -1,25 +1,20 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
 
-using Anvil.Payloads.Response;
-
-using GraphQL.Client.Http;
-using GraphQL.Client.Serializer.Newtonsoft;
-
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 
 namespace Anvil.Client
 {
-    public class GraphQLClient : BaseClient, IDisposable
+    /// <summary>
+    /// The pre-1.0 GraphQL client, now a thin wrapper over <see cref="AnvilClient"/>,
+    /// which rate limits, retries and reports errors the same way for REST and
+    /// GraphQL. Use <see cref="AnvilClient"/> directly in new code.
+    /// </summary>
+    [Obsolete("Use AnvilClient, which has CreateEtchPacketAsync, GetEtchPacketAsync, GenerateEtchSignUrlAsync, ForgeSubmitAsync, RemoveWeldDataAsync and RequestGraphQLAsync.")]
+    public class GraphQLClient : IDisposable
     {
-        private readonly GraphQLHttpClient _graphQlHttpClient;
+        private readonly AnvilClient _anvil;
         private bool _disposed;
 
         public GraphQLClient(string apiKey) : this(apiKey, null)
@@ -36,40 +31,11 @@ namespace Anvil.Client
         /// </param>
         public GraphQLClient(string apiKey, string? baseUrl)
         {
-            _apiKey = apiKey;
-
-            var httpOptions = new GraphQLHttpClientOptions { EndPoint = new Uri(Constants.GraphQLEndpoint(baseUrl)) };
-
-            var encodedKey = EncodeApiKey();
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Clear();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Basic {encodedKey}");
-            httpClient.DefaultRequestHeaders.Accept.Clear();
-            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            DefaultContractResolver contractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy()
-            };
-            var jsonSerializerSettings = new JsonSerializerSettings
-            {
-                ContractResolver = contractResolver,
-                NullValueHandling = NullValueHandling.Ignore
-            };
-
-            _graphQlHttpClient = new GraphQLHttpClient(httpOptions,
-                // new SystemTextJsonSerializer(jsonSerializerOptions), httpClient);
-                new NewtonsoftJsonSerializer(jsonSerializerSettings), httpClient);
-
-            // If using the `System.Text.Json` serializer, we should use these options:
-            //
-            // var jsonSerializerOptions = new JsonSerializerOptions
-            // {
-            //     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            //     PropertyNameCaseInsensitive = true,
-            //     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            // };
+            _anvil = new AnvilClient(apiKey, baseUrl);
         }
+
+        /// <summary>The client the requests go through.</summary>
+        public AnvilClient Anvil => _anvil;
 
         /// <summary>
         /// Sends an arbitrary GraphQL request to the Anvil API with the
@@ -80,112 +46,10 @@ namespace Anvil.Client
         /// </summary>
         /// <param name="query">Full GraphQL query string</param>
         /// <param name="variables">Object containing variables for the query</param>
-        /// <returns>JObject</returns>
-        public async Task<JObject> SendQuery(string query, object? variables)
+        /// <returns>The response's <c>data</c></returns>
+        public Task<JObject> SendQuery(string query, object? variables)
         {
-            var request = new GraphQLHttpRequest()
-            {
-                Query = query,
-                Variables = variables,
-            };
-
-            return await SendQuery<JObject>(request);
-        }
-
-        /// <summary>
-        /// Sends GraphQL requests with the initialized GraphQL client.
-        ///
-        /// Use the overloaded `SendQuery(string s)` and `SendMutation(string s)` for
-        /// queries and mutations without needing to create a full `GraphQLHttpRequest`
-        /// object instance.
-        /// </summary>
-        /// <see cref="SendQuery" />
-        /// 
-        /// <param name="request">A GraphQLHttpRequest instance</param>
-        /// <typeparam name="TResponse">Response type of the resulting GraphQL request</typeparam>
-        private async Task<TResponse> SendQuery<TResponse>(GraphQLHttpRequest request)
-        {
-            try
-            {
-                var response = await _graphQlHttpClient.SendQueryAsync<TResponse>(request);
-                if (response.Errors != null && response.Errors.Length > 0)
-                {
-                    var count = 1;
-                    var exc = new AnvilClientException(
-                        string.Join("; ", Array.ConvertAll(response.Errors, e => e.Message))
-                    );
-                    foreach (var e in response.Errors)
-                    {
-                        exc.Data.Add($"Message{count}", e.Message);
-                        count++;
-                    }
-
-                    throw exc;
-                }
-
-                return response.Data;
-            }
-            catch (GraphQLHttpRequestException ex)
-            {
-                throw WrapGraphQLException(ex);
-            }
-        }
-
-        internal static AnvilClientException WrapGraphQLException(GraphQLHttpRequestException ex)
-        {
-            var messages = new List<string>();
-
-            if (ex.Content != null)
-            {
-                try
-                {
-                    var errorResponse = JsonConvert.DeserializeObject(ex.Content) as JObject;
-                    if (errorResponse != null)
-                    {
-                        var errors = errorResponse["errors"] as JArray;
-                        if (errors != null)
-                        {
-                            foreach (var e in errors)
-                            {
-                                var msg = e["message"]?.ToString();
-                                if (msg != null) messages.Add(msg);
-                            }
-                        }
-                    }
-                }
-                catch (JsonException)
-                {
-                    // Response is not JSON — raw content is captured below
-                }
-            }
-
-            var message = messages.Count > 0
-                ? string.Join("; ", messages)
-                : $"Error: {ex.StatusCode}";
-
-            var anvilEx = new AnvilClientException(message, ex)
-            {
-                HttpStatusCode = ex.StatusCode,
-                ResponseContent = ex.Content
-            };
-
-            if (ex.ResponseHeaders != null)
-            {
-                anvilEx.ResponseHeaders = new Dictionary<string, IEnumerable<string>>(StringComparer.OrdinalIgnoreCase);
-                foreach (var header in ex.ResponseHeaders)
-                {
-                    anvilEx.ResponseHeaders[header.Key] = header.Value;
-                }
-            }
-
-            var dataCount = 1;
-            foreach (var msg in messages)
-            {
-                anvilEx.Data.Add($"Message{dataCount}", msg);
-                dataCount++;
-            }
-
-            return anvilEx;
+            return _anvil.RequestGraphQLAsync(query, variables);
         }
 
         /// <summary>
@@ -193,45 +57,25 @@ namespace Anvil.Client
         ///
         /// <see href="https://www.useanvil.com/docs/api/graphql/reference/#operation-etchpacket-Queries" />
         /// </summary>
-        /// <param name="etchPacketEid"></param>
-        /// <returns></returns>
-        public async Task<Payloads.Response.EtchPacketPayload> GetEtchPacket(string etchPacketEid)
+        public Task<Payloads.Response.EtchPacketPayload> GetEtchPacket(string etchPacketEid)
         {
-            var query = new Queries.GetEtchPacket();
-            var request = new GraphQLHttpRequest
-            {
-                Query = query.GetFullDefaultQuery(),
-                Variables = new { Eid = etchPacketEid },
-                OperationName = "GetEtchPacket"
-            };
-
-            return await SendQuery<Payloads.Response.EtchPacketPayload>(request);
+            return _anvil.RequestGraphQLAsync<Payloads.Response.EtchPacketPayload>(
+                new Queries.GetEtchPacket().GetFullDefaultQuery(),
+                new { Eid = etchPacketEid },
+                "GetEtchPacket");
         }
 
         /// <summary>
         /// Generates an Etch signing URL for use with "embedded" signer types.
         ///
-        /// See API docs for more detail.
         /// <see href="https://www.useanvil.com/docs/api/e-signatures#controlling-the-signature-process-with-embedded-signers" />
         /// </summary>
-        /// 
-        /// <param name="signerEid"></param>
-        /// <param name="clientUserId"></param>
-        /// <returns></returns>
-        public async Task<Payloads.Response.GenerateEtchSignUrlPayload> GenerateEtchSignUrl(
-            string signerEid,
-            string clientUserId
-        )
+        public Task<Payloads.Response.GenerateEtchSignUrlPayload> GenerateEtchSignUrl(string signerEid, string clientUserId)
         {
-            var query = new Queries.GenerateEtchSignUrl();
-            var request = new GraphQLHttpRequest
-            {
-                Query = query.GetFullDefaultQuery(),
-                Variables = new { signerEid, clientUserId },
-                OperationName = "GenerateEtchSignURL"
-            };
-
-            return await SendQuery<Payloads.Response.GenerateEtchSignUrlPayload>(request);
+            return _anvil.RequestGraphQLAsync<Payloads.Response.GenerateEtchSignUrlPayload>(
+                new Queries.GenerateEtchSignUrl().GetFullDefaultQuery(),
+                new { signerEid, clientUserId },
+                "GenerateEtchSignURL");
         }
 
         /// <summary>
@@ -239,32 +83,20 @@ namespace Anvil.Client
         ///
         /// <see href="https://www.useanvil.com/docs/api/graphql/reference/#operation-forgesubmit-Mutations"/>
         /// </summary>
-        /// <param name="requestPayload"></param>
-        /// <returns></returns>
-        public async Task<Payloads.Response.ForgeSubmitPayload> ForgeSubmit(Payloads.Request.ForgeSubmit requestPayload)
+        public Task<Payloads.Response.ForgeSubmitPayload> ForgeSubmit(Payloads.Request.ForgeSubmit requestPayload)
         {
-            var query = new Queries.ForgeSubmit();
-            var request = new GraphQLHttpRequest
-            {
-                Query = query.GetFullDefaultQuery(),
-                Variables = requestPayload,
-                OperationName = "ForgeSubmit"
-            };
-
-            return await SendQuery<Payloads.Response.ForgeSubmitPayload>(request);
+            return _anvil.RequestGraphQLAsync<Payloads.Response.ForgeSubmitPayload>(
+                new Queries.ForgeSubmit().GetFullDefaultQuery(),
+                requestPayload,
+                "ForgeSubmit");
         }
 
-        public async Task<Payloads.Response.RemoveWeldDataPayload> RemoveWeldData(string weldEid)
+        public Task<Payloads.Response.RemoveWeldDataPayload> RemoveWeldData(string weldEid)
         {
-            var query = new Queries.RemoveWeldData();
-            var request = new GraphQLHttpRequest
-            {
-                Query = query.GetFullDefaultQuery(),
-                Variables = new Dictionary<string, string> { { "eid", weldEid } },
-                OperationName = "RemoveWeldData"
-            };
-
-            return await SendQuery<Payloads.Response.RemoveWeldDataPayload>(request);
+            return _anvil.RequestGraphQLAsync<Payloads.Response.RemoveWeldDataPayload>(
+                new Queries.RemoveWeldData().GetFullDefaultQuery(),
+                new Dictionary<string, string> { { "eid", weldEid } },
+                "RemoveWeldData");
         }
 
         /// <summary>
@@ -272,33 +104,24 @@ namespace Anvil.Client
         ///
         /// <see href="https://www.useanvil.com/docs/api/graphql/reference/#operation-currentuser-Queries" />
         /// </summary>
-        /// <returns></returns>
-        public async Task<Payloads.Response.CurrentUserPayload> GetCurrentUser()
+        public Task<Payloads.Response.CurrentUserPayload> GetCurrentUser()
         {
-            var query = new Queries.CurrentUser();
-            var request = new GraphQLHttpRequest { Query = query.GetFullDefaultQuery(), };
-
-            return await SendQuery<Payloads.Response.CurrentUserPayload>(request);
+            return _anvil.RequestGraphQLAsync<Payloads.Response.CurrentUserPayload>(new Queries.CurrentUser().GetFullDefaultQuery());
         }
 
-        public async Task<Payloads.Response.CreateEtchPacketPayload> CreateEtchPacket(Payloads.Request.CreateEtchPacket payload)
+        public Task<Payloads.Response.CreateEtchPacketPayload> CreateEtchPacket(Payloads.Request.CreateEtchPacket payload)
         {
-            var query = new Queries.CreateEtchPacket();
-            var request = new GraphQLHttpRequest
-            {
-                Query = query.GetFullDefaultQuery(),
-                Variables = payload,
-                OperationName = "CreateEtchPacket"
-            };
-
-            return await SendQuery<Payloads.Response.CreateEtchPacketPayload>(request);
+            return _anvil.RequestGraphQLAsync<Payloads.Response.CreateEtchPacketPayload>(
+                new Queries.CreateEtchPacket().GetFullDefaultQuery(),
+                payload,
+                "CreateEtchPacket");
         }
 
         public void Dispose()
         {
             if (!_disposed)
             {
-                _graphQlHttpClient.Dispose();
+                _anvil.Dispose();
                 _disposed = true;
             }
         }
