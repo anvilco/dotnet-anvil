@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A Sync API Types workflow bumps `@anvilco/types` and regenerates `Anvil.Types` whenever anvil-js publishes a new version, opening a PR when anything changed.
 - Line endings are LF, and `.gitattributes` keeps them that way.
 - Update the test dependencies (xunit 2.9, Microsoft.NET.Test.Sdk 18, coverlet 10) and Newtonsoft.Json to 13.0.4. Moq was unused and is removed.
+- Sync the generated API types in `Anvil.Types` with the production API.
 
 ## [v0.6.0] - 2026-03-03
 
