@@ -350,6 +350,19 @@ ANVIL_API_KEY=<your staging API key> dotnet run --project test-client
 
 Everything it creates is test data. It creates test Etch packets each run, and removes the Workflow submission it creates.
 
+### The generated types
+
+`src/Anvil/Types` is generated from the API specs that ship with `@anvilco/types` (the GraphQL schema and the OpenAPI spec): `Anvil.Types.Rest` has the REST request bodies (`FillPdfRequest`, `GenerateMarkdownPdfRequest`, `EtchSigner`, ...), `Anvil.Types.GraphQL` every type in the GraphQL schema, and `Anvil.Types.Operations` the arguments of every query and mutation (`CreateEtchPacketArgs`, ...). Enums are string properties with a nested `*Values` class of the documented constants, so a value the API adds later is accepted. Unknown JSON members are kept in `AdditionalData`.
+
+```bash
+dev/fetch-schema.sh      # bump @anvilco/types to the latest published version
+cd dev && npm run generate   # regenerate src/Anvil/Types from its specs
+```
+
+`npm run generate` runs offline, and CI fails if the generated files don't match the specs, so run it after `dev/fetch-schema.sh` or after changing `dev/generate-types.mjs`.
+
+The [Sync API Types workflow](.github/workflows/sync-api-types.yml) does both steps whenever anvil-js publishes a new `@anvilco/types` (its release workflow sends an `anvilco-types-published` dispatch here), and weekly as a backstop, and opens a PR when anything changed. It needs a `CI_GITHUB_TOKEN` repository secret: a token that can push branches and open PRs, so the PR gets its CI checks (python-anvil and anvil-js use the same secret name).
+
 ### Checking the GraphQL operations against the schema
 
 The API's GraphQL schema and OpenAPI spec come from the

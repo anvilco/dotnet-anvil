@@ -60,7 +60,7 @@ jobs:
           dotnet build dev/DumpOperations
 
   check-graphql:
-    name: Check GraphQL operations against the schema
+    name: Check the operations and generated types against the schema
     runs-on: blacksmith-4vcpu-ubuntu-2404
 
     steps:
@@ -79,6 +79,10 @@ jobs:
           cache-dependency-path: dev/package-lock.json
 
       - run: npm ci
+        working-directory: dev
+
+      - name: Check the generated types are up to date with the API specs
+        run: npm run check:generated
         working-directory: dev
 
       # The client's operations don't match the schema yet (documentGroup.id,

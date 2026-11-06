@@ -1,0 +1,169 @@
+name: Sync API Types
+
+# Bumps the @anvilco/types dependency in dev/, which ships the API's specs (the
+# GraphQL schema and the OpenAPI spec, regenerated from production after every
+# deploy by anvil-js's own sync), regenerates src/Anvil/Types, and opens one PR
+# when any of it changed. Runs when anvil-js publishes a new @anvilco/types: its
+# release workflow sends `anvilco-types-published` here. That dispatch is
+# best-effort with no retry, so the weekly cron is a backstop for a dropped one.
+# python-anvil's sync-api-types.yml does the same for python_anvil/types.
+
+on:
+  repository_dispatch:
+    types: [anvilco-types-published]
+  schedule:
+    - cron: '0 11 * * 1' # Every Monday at 11am UTC
+  workflow_dispatch:
+
+# BRANCH is force-pushed, so never let two runs race on it.
+concurrency: sync-api-types
+
+env:
+  BRANCH: chore/sync-api-types
+  # The specs: the OpenAPI spec, and the package that ships the GraphQL schema
+  SPEC_PATHS: schema dev/package.json dev/package-lock.json
+  TYPES_DIR: src/Anvil/Types
+
+jobs:
+  sync-api-types:
+    name: Sync API Types
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      # Always main, so a manual run from another branch can't put that
+      # branch's commits in the PR. No persisted credentials: CI_GITHUB_TOKEN
+      # is only handed to git and gh in the steps that push, not to the
+      # install and the generators.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      # Fail before fetching or generating anything, rather than after, when
+      # the token that opens the PR is missing. See "The generated types" in the README.
+      - name: Check the CI_GITHUB_TOKEN secret is set
+        env:
+          GH_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::The CI_GITHUB_TOKEN repository secret is not set. The workflow needs it to push the sync branch and open the PR (the workflow's own GITHUB_TOKEN can't trigger the PR's CI). Add a token with Contents: write and Pull requests: write on this repository under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: dev/package-lock.json
+
+      - run: npm ci
+        working-directory: dev
+
+      # One step, so the types are never regenerated from a spec that failed
+      # to fetch, and a failed generation is discarded along with the specs.
+      - name: Fetch the specs and generate the types
+        id: generate
+        continue-on-error: true
+        run: |
+          dev/fetch-schema.sh
+          npm run generate --prefix dev
+
+      - name: Discard the output if that failed
+        if: steps.generate.outcome != 'success'
+        run: git checkout -- $SPEC_PATHS "$TYPES_DIR"
+
+      - name: Check for changes
+        id: changes
+        run: |
+          echo "changed=$(git diff --quiet -- $SPEC_PATHS "$TYPES_DIR" && echo false || echo true)" >> "$GITHUB_OUTPUT"
+          git diff --stat
+
+      - name: Open or update PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          TYPES_VERSION: ${{ github.event.client_payload.version }}
+          TYPES_RELEASE_URL: ${{ github.event.client_payload.releaseUrl }}
+        run: |
+          # Not GITHUB_TOKEN: pushes and PRs made with it don't trigger
+          # workflows, so the PR would never get its CI checks.
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # A deploy that didn't move the API again would otherwise force-push
+          # an identical commit, re-running CI and discarding any edits made
+          # on the branch.
+          PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$PR" ] && git fetch -q --depth=1 origin "$BRANCH" && git diff --quiet FETCH_HEAD -- $SPEC_PATHS "$TYPES_DIR"; then
+            echo "PR #$PR already has this output"
+            exit 0
+          fi
+
+          # Note the sync under Unreleased in the changelog, once per release
+          node - <<'JS'
+          const fs = require('fs')
+          const path = 'CHANGELOG.md'
+          let text = fs.readFileSync(path, 'utf8')
+          const note = '- Sync the generated API types in `Anvil.Types` with the production API.'
+          const match = /^## \[Unreleased\]\n([\s\S]*?)(?=^## \[|(?![\s\S]))/m.exec(text)
+          if (match && !match[1].includes(note)) {
+            const body = match[1].replace(/\n+$/, '')
+            const section = body ? `${body}\n${note}\n\n` : `\n${note}\n\n`
+            text = text.slice(0, match.index + match[0].length - match[1].length) + section + text.slice(match.index + match[0].length)
+            fs.writeFileSync(path, text)
+          }
+          JS
+
+          if [ "$EVENT_NAME" = repository_dispatch ]; then
+            TRIGGER="the release of \`@anvilco/types@$TYPES_VERSION\` ($TYPES_RELEASE_URL)."
+          else
+            TRIGGER="a \`$EVENT_NAME\` run."
+          fi
+          {
+            echo "Automated sync of the generated types from the published \`@anvilco/types\`, which carries the production API's specs. Triggered by $TRIGGER"
+            echo
+            echo "- \`dev/package.json\`: the \`@anvilco/types\` dependency bumped to the published version; it ships the GraphQL schema and the OpenAPI spec"
+            echo "- \`$TYPES_DIR/\`: regenerated from them with \`npm run generate\` in \`dev/\`"
+            echo
+            echo "If a type or field was removed or renamed, note it under Unreleased in CHANGELOG.md as a breaking change before merging."
+            echo
+            echo "A later deploy that changes these files again rebuilds this branch from \`main\`, replacing any edits made here."
+          } > "$RUNNER_TEMP/pr-body.md"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add -A -- $SPEC_PATHS "$TYPES_DIR" CHANGELOG.md
+          git commit -m "Sync the generated API types from production"
+          git push --force origin "$BRANCH"
+
+          if [ -n "$PR" ]; then
+            gh pr edit "$PR" --body-file "$RUNNER_TEMP/pr-body.md"
+          else
+            gh pr create \
+              --title "Sync the generated API types from production" \
+              --body-file "$RUNNER_TEMP/pr-body.md" \
+              --base main \
+              --head "$BRANCH"
+          fi
+
+      # Production moved back to match main (e.g. a rollback before the PR
+      # merged), so an open sync PR is now wrong.
+      - name: Close stale PR
+        if: steps.changes.outputs.changed == 'false' && steps.generate.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.CI_GITHUB_TOKEN }}
+        run: |
+          PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$PR" ]; then
+            gh pr close "$PR" --delete-branch --comment "Production now matches main, so this sync is no longer needed."
+          fi
+
+      - name: Fail if the generator failed
+        if: steps.generate.outcome != 'success'
+        run: |
+          echo "::error::Fetching the specs or generating the types failed. See the step above."
+          exit 1
