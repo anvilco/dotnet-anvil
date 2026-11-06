@@ -8,6 +8,19 @@ namespace Anvil
         // the client was constructed with, which defaults to this.
         public const string DefaultBaseUrl = "https://app.useanvil.com";
 
+        public const int DefaultRequestLimit = 1;
+        public const int DefaultRequestLimitMs = 1000;
+        public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(5);
+        public const int DefaultMaxRetries = 5;
+
+        // Added to every wait so a request never lands just inside the API's window
+        public const int RateLimitBufferMs = 50;
+        // What a 429 without a usable Retry-After waits, and the most any Retry-After is honored for
+        public const int DefaultRetryAfterMs = 1000;
+        public const int MaxRetryAfterMs = 60_000;
+        // Backoff for 5xx and connection errors: this doubled per attempt
+        public const int RetryBackoffBaseMs = 100;
+
         public static string NormalizeBaseUrl(string? baseUrl)
         {
             if (string.IsNullOrWhiteSpace(baseUrl))
@@ -28,23 +41,17 @@ namespace Anvil
 
         public static string GraphQLEndpoint(string? baseUrl) => NormalizeBaseUrl(baseUrl) + "/graphql";
 
-        // Remember to end the URI string here with a `/` since it will be appended onto
-        // when the HTTP clients are used. *ALSO* when providing a URI path
-        // (i.e. `RestClient.SendRequest("path/here", data);`), the path must _NOT_
-        // have a starting `/` or the path will be rewritten.
-        // For example: Using "/fill/my.pdf" will have a final URI of
-        // "http://app.useanvil.com/fill/my.pdf", removing the "api/v1".
+        // Ends with a `/` so relative paths append to it. A path with a leading
+        // `/` replaces the whole path instead (`/fill/my.pdf` would drop `api/v1`).
         public static string RestEndpoint(string? baseUrl) => NormalizeBaseUrl(baseUrl) + "/api/v1/";
 
         // https://www.useanvil.com/docs/api/fill-pdf
-        public const string FillPdf = @"fill/{0}.pdf";
+        public const string FillPdf = @"/api/v1/fill/{0}.pdf";
 
         // https://www.useanvil.com/docs/api/generate-pdf
-        public const string GeneratePdf = "generate-pdf";
+        public const string GeneratePdf = "/api/v1/generate-pdf";
 
         // https://www.useanvil.com/docs/api/e-signatures#downloading-documents
-        // In this case _we want_ the initial `/` because this does not use the base endpoint
-        // above of `/api/v1/`.
         public const string DownloadDocuments = @"/api/document-group/{0}.zip";
     }
 

@@ -24,6 +24,8 @@
 // A check that the client can't pass yet prints SKIP with the phase of the
 // modernization plan that adds it, so the expected output of each phase is
 // known in advance and a regression shows up as FAIL.
+using System.Diagnostics;
+using System.Net.Http;
 using System.Text;
 
 using Anvil;
@@ -46,8 +48,12 @@ if (string.IsNullOrWhiteSpace(apiKey))
 
 Console.WriteLine($"Testing the Anvil .NET client against {baseUrl}\n");
 
+using var anvil = new AnvilClient(new AnvilClientOptions { ApiKey = apiKey, BaseUrl = baseUrl });
+// The pre-1.0 clients, until their methods move to AnvilClient
+#pragma warning disable CS0618
 using var rest = new RestClient(apiKey, baseUrl);
 using var graphql = new GraphQLClient(apiKey, baseUrl);
+#pragma warning restore CS0618
 
 var results = new List<(string Name, string Status)>();
 
@@ -60,9 +66,9 @@ string? documentGroupEid = null;
 string? signerEid = null;
 string? weldDataEid = null;
 
-await Check("SendQuery", async () =>
+await Check("RequestGraphQLAsync", async () =>
 {
-    var data = await graphql.SendQuery(@"
+    var data = await anvil.RequestGraphQLAsync(@"
         query TestClient {
           currentUser { eid }
           organization {
@@ -70,7 +76,7 @@ await Check("SendQuery", async () =>
             casts(limit: 50) { items { eid exampleData } }
             forges(isArchived: false) { eid }
           }
-        }", null);
+        }");
     var currentUser = data["currentUser"] as JObject;
     var organization = data["organization"] as JObject;
     if (currentUser == null || organization == null)
@@ -83,7 +89,7 @@ await Check("SendQuery", async () =>
     if (castEid != null)
     {
         // The API won't fill a PDF with empty data, so use the template's example data
-        var cast = await graphql.SendQuery(
+        var cast = await anvil.RequestGraphQLAsync(
             "query TestClientCast ($eid: String!) { cast(eid: $eid) { exampleData } }",
             new { eid = castEid });
         castData = cast["cast"]?["exampleData"] as JObject;
@@ -102,28 +108,66 @@ await Check("SendQuery", async () =>
     return $"organization {organization["eid"]}";
 });
 
-await Check("rate limiting", () =>
-    throw new Skip("Phase 2: the client has no rate limiter yet"));
-
-await Check("OAuth access token", () =>
+await Check("rate limiting", async () =>
 {
-    if (accessToken == null)
+    // The first response taught the client the account's limit. Send more
+    // requests than it allows at once: the client must hold the extra ones
+    // back for a full interval, and the API should never have to answer 429.
+    var limit = anvil.RateLimit;
+    if (!limit.LearnedFromResponse)
     {
-        throw new Skip("Set ANVIL_ACCESS_TOKEN to test Bearer auth");
+        throw new Exception("The first response had no X-RateLimit-Limit and X-RateLimit-Interval-Ms headers");
     }
 
-    throw new Skip("Phase 2: OAuth access tokens are not supported yet");
+    var count = limit.Limit + 2;
+    if (count > 50)
+    {
+        throw new Skip($"The limit is {limit.Limit} per {limit.IntervalMs}ms: too many to test in one burst");
+    }
+
+    var rateLimited = 0;
+    void OnRateLimited(object? sender, RateLimitedEventArgs e) => Interlocked.Increment(ref rateLimited);
+    anvil.RateLimited += OnRateLimited;
+    var clock = Stopwatch.StartNew();
+    try
+    {
+        await Task.WhenAll(Enumerable.Range(0, count).Select(_ => anvil.RequestGraphQLAsync("{ currentUser { eid } }")));
+    }
+    finally
+    {
+        anvil.RateLimited -= OnRateLimited;
+    }
+
+    var elapsed = clock.Elapsed;
+    if (elapsed.TotalMilliseconds < limit.IntervalMs)
+    {
+        throw new Exception($"{count} requests went out in {elapsed.TotalSeconds:F2}s, faster than {limit.Limit} per {limit.IntervalMs}ms allows");
+    }
+
+    if (rateLimited > 0)
+    {
+        throw new Exception($"{rateLimited} of {count} requests got a 429 and were retried. The client paces requests so the API never has to answer 429; another process using this API key at the same time can cause it.");
+    }
+
+    return $"{limit.Limit} per {limit.IntervalMs}ms learned from the API; {count} requests took {elapsed.TotalSeconds:F2}s, no 429s";
 });
 
-await Check("SendPostRequest", async () =>
+await Check("OAuth access token", async () =>
 {
-    var body = JsonConvert.SerializeObject(new
+    SkipUnless(accessToken, "Set ANVIL_ACCESS_TOKEN to test Bearer auth");
+    using var oauth = new AnvilClient(new AnvilClientOptions { AccessToken = accessToken, BaseUrl = baseUrl });
+    var data = await oauth.RequestGraphQLAsync("{ currentUser { eid } }");
+    return $"user {data["currentUser"]?["eid"] ?? throw new Exception("Expected currentUser")}";
+});
+
+await Check("RequestRestBytesAsync", async () =>
+{
+    var pdf = await anvil.RequestRestBytesAsync(HttpMethod.Post, "/api/v1/generate-pdf", new
     {
-        title = "SendPostRequest",
-        data = new[] { new { content = "Sent with SendPostRequest" } },
+        title = "RequestRestBytesAsync",
+        data = new[] { new { content = "Sent with RequestRestBytesAsync" } },
     });
-    var response = await rest.SendPostRequest("generate-pdf", new StringContent(body, Encoding.UTF8, "application/json"));
-    return AssertPdf(await response.Content.ReadAsByteArrayAsync());
+    return AssertPdf(pdf);
 });
 
 await Check("GeneratePdf (markdown)", async () =>
@@ -258,7 +302,7 @@ await Check("CreateEtchPacket (base64 upload)", async () =>
 await Check("CreateEtchPacket (in-person signer)", () =>
     throw new Skip("Phase 3: EtchSigner rejects the `in-person` signer type (#27)"));
 
-await Check("SendQuery (createCast upload)", () =>
+await Check("RequestGraphQLAsync (createCast upload)", () =>
     throw new Skip("Phase 4: multipart GraphQL file uploads are not supported yet (#26)"));
 
 await Check("GetEtchPacket", async () =>
