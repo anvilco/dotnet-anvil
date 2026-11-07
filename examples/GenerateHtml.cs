@@ -1,58 +1,43 @@
-// Generate a PDF from HTML and CSS via the Anvil API.
-// Docs: https://www.useanvil.com/docs/api/generate-pdf#html--css-to-pdf
+// Generate a PDF from HTML and CSS and save it.
+// Docs: https://www.useanvil.com/docs/api/generate-pdf
 //
-// Run it from a project with the Anvil package installed
-// (dotnet add package Anvil):
-//   ANVIL_API_KEY=yourKey dotnet run
+//   ANVIL_API_KEY=yourKey dotnet run --project examples -- generate-html [output.pdf]
+using Anvil;
+using Anvil.Payloads;
+using Anvil.Types.Rest;
 
-using Anvil.Client;
-using Anvil.Payloads.Request;
-using Anvil.Payloads.Request.Types;
+namespace AnvilExamples;
 
-class GenerateHtmlExample
+public static class GenerateHtml
 {
-    static async Task Main(string[] args)
+    public static async Task Run(AnvilClient anvil, string[] args)
     {
-        var apiKey = Environment.GetEnvironmentVariable("ANVIL_API_KEY");
+        var outputPath = args.Length > 0 ? args[0] : "generate-html-output.pdf";
 
-        var payload = new GeneratePdf()
+        var payload = new GeneratePdfPayload
         {
-            Title = "Example HTML to PDF",
-            Type = "html",
-            Data = new GeneratePdfHtml()
+            Title = "Example Invoice",
+            Type = GeneratePdfPayload.TypeValues.Html,
+            Data = new HtmlContent
             {
                 Html = @"
                     <h1 class='header-one'>What is Lorem Ipsum?</h1>
                     <p>
-                      Lorem Ipsum is simply dummy text of the printing
-                      and typesetting industry. Lorem Ipsum has been the
-                      industry's standard dummy text ever since the
-                      <strong>1500s</strong>, when an unknown printer took
-                      a galley of type and scrambled it to make a type
-                      specimen book.
+                      Lorem Ipsum is simply dummy text of the printing and typesetting
+                      industry. Lorem Ipsum has been the industry's standard dummy text
+                      ever since the <strong>1500s</strong>.
                     </p>
                     <h3 class='header-two'>Where does it come from?</h3>
-                    <p>
-                      Contrary to popular belief, Lorem Ipsum is not
-                      simply random text. It has roots in a piece of
-                      classical Latin literature from <i>45 BC</i>, making
-                      it over <strong>2000</strong> years old.
-                    </p>
-                ",
+                    <p>Contrary to popular belief, Lorem Ipsum is not simply random text.</p>",
                 Css = @"
                     body { font-size: 14px; color: #171717; }
                     .header-one { text-decoration: underline; }
-                    .header-two { font-style: italic; }
-                ",
-            }
+                    .header-two { font-style: underline; }",
+            },
+            Page = new PageOptions { Width = "8.5in", Height = "11in", Margin = "60px" },
         };
 
-        var client = new RestClient(apiKey);
-        var wasWritten = await client.GeneratePdf(
-            payload, "./generate-html-output.pdf");
-
-        Console.WriteLine(wasWritten
-            ? "Generated PDF saved to generate-html-output.pdf"
-            : "There was an error generating the PDF");
+        await anvil.GeneratePdfToFileAsync(payload, outputPath);
+        Console.WriteLine($"Generated a PDF from HTML and saved it to {outputPath}");
     }
 }

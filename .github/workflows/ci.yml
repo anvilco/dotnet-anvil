@@ -65,10 +65,15 @@ jobs:
           if-no-files-found: error
 
       # Not in the solution, so they can't rot unnoticed
-      - name: Build the test-client and dev tools
+      - name: Build the test-client, examples and dev tools
         run: |
           dotnet build test-client
+          dotnet build examples
           dotnet build dev/DumpOperations
+
+      # What gets published: pack, install the package into a scratch app, run it
+      - name: Pack and install the package
+        run: dev/pack-smoke.sh
 
   check-graphql:
     name: Check the operations and generated types against the schema
