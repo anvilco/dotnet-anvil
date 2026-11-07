@@ -49,6 +49,7 @@ namespace Anvil
         {
             ContractResolver = new DefaultContractResolver { NamingStrategy = new CamelCaseNamingStrategy() },
             NullValueHandling = NullValueHandling.Ignore,
+            Converters = { new GraphQLUploadConverter() },
         };
 
         internal static readonly JsonSerializer Serializer = JsonSerializer.Create(SerializerSettings);
@@ -227,13 +228,27 @@ namespace Anvil
             return SendGraphQLOperationAsync(operation, options, cancellationToken);
         }
 
-        /// <summary>Sends a GraphQL operation as JSON. Overridden by the upload support when the variables hold files.</summary>
-        internal virtual Task<ProcessedResponse> SendGraphQLOperationAsync(JObject operation, RequestOptions? options, CancellationToken cancellationToken)
+        /// <summary>
+        /// Sends a GraphQL operation as JSON, or as a multipart request when its
+        /// variables hold files from <see cref="PrepareGraphQLFile(string, string?, string?)"/>.
+        /// </summary>
+        internal Task<ProcessedResponse> SendGraphQLOperationAsync(JObject operation, RequestOptions? options, CancellationToken cancellationToken)
         {
-            var body = operation.ToString(Formatting.None);
+            Uploads.Validate(operation);
+            var uploads = Uploads.Extract(operation);
             var url = Url("/graphql");
+            if (uploads.Count == 0)
+            {
+                var body = operation.ToString(Formatting.None);
+                return SendAndProcessAsync(
+                    () => new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent(body) },
+                    stream: false,
+                    options,
+                    cancellationToken);
+            }
+
             return SendAndProcessAsync(
-                () => new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent(body) },
+                () => new HttpRequestMessage(HttpMethod.Post, url) { Content = Uploads.Build(operation, uploads) },
                 stream: false,
                 options,
                 cancellationToken);
