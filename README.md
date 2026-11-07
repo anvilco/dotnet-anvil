@@ -168,7 +168,7 @@ var payload = new GeneratePdfPayload
         Html = "<h1>Hello</h1><p>From the Anvil .NET client</p>",
         Css = "h1 { color: #4c5bf1; }",
     },
-    Page = new PageOptions { Width = "8.5in", Height = "11in", Margin = "60px" },
+    Page = new Anvil.Types.Rest.PageOptions { Width = "8.5in", Height = "11in", Margin = "60px" },
 };
 
 byte[] pdf = await anvil.GeneratePdfAsync(payload);
@@ -248,6 +248,8 @@ var packet = await anvil.CreateEtchPacketAsync(payload, responseQuery: "eid stat
 Gets an Etch packet: its status, documents and signers.
 
 ```cs
+using Anvil.Types.GraphQL;
+
 EtchPacket packet = await anvil.GetEtchPacketAsync("etch-packet-eid");
 Console.WriteLine($"{packet.Status}, {packet.NumberRemainingSigners} signers remaining");
 
@@ -335,6 +337,9 @@ The response's `errors` throw an [`AnvilClientException`](#errors). `GetCurrentU
 Sends any REST request. The path is on the client's [`BaseUrl`](#baseurl), e.g. `/api/v1/generate-pdf`; a full URL is accepted if it is on the base URL, and refused otherwise.
 
 ```cs
+using System.Text;
+using Newtonsoft.Json.Linq;
+
 // JSON in, JSON out
 JToken json = await anvil.RequestRestAsync(HttpMethod.Post, "/api/v1/fill/pdf-template-eid.pdf", new
 {
@@ -351,7 +356,7 @@ using Stream stream = await anvil.RequestRestStreamAsync(HttpMethod.Get, "/api/d
 
 // Query string parameters, and the checked HttpResponseMessage for anything else
 var response = await anvil.SendRestAsync(HttpMethod.Post, "/api/v1/fill/eid.pdf",
-    content: () => new StringContent(json, Encoding.UTF8, "application/json"),
+    content: () => new StringContent("{\"data\":{\"name\":\"Sally\"}}", Encoding.UTF8, "application/json"),
     query: new Dictionary<string, string> { ["versionNumber"] = "-1" });
 ```
 
@@ -454,9 +459,9 @@ catch (AnvilClientException e)
             Console.WriteLine($"  {field.Property}: {field.Message}");
         }
     }
-    e.Headers;          // the response's headers
-    e.ResponseContent;  // the body, or the start of a large non-JSON body
-    e.ResponseData;     // any `data` a GraphQL response returned alongside its errors
+    var headers = e.Headers;          // the response's headers
+    var content = e.ResponseContent;  // the body, or the start of a large non-JSON body
+    var data = e.ResponseData;        // any `data` a GraphQL response returned alongside its errors
 }
 ```
 
