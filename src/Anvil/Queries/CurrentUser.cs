@@ -1,25 +1,15 @@
+using System;
+
 namespace Anvil.Queries
 {
+    /// <summary>The pre-1.0 holder of this operation; now the same document as <see cref="GraphQL.Operations"/>.</summary>
+    [Obsolete("Use Anvil.GraphQL.Operations.")]
     public class CurrentUser : BaseQuery
     {
-        public override string DefaultQuery => @"
-            query currentUser {
-                currentUser {
-                    id
-                    eid
-                    email
-                    name
-                    firstName
-                    lastName
-                    role
-                    verifiedEmail
-                    createdAt
-                    updatedAt
-                    extra
-                    numSentEtchPackets
-                }
-            }
-        ";
-        public override string? DefaultResponseQuery { get; }
+        public override string DefaultQuery => GraphQL.Operations.CurrentUserQuery(null);
+
+        public override string? DefaultResponseQuery => GraphQL.Operations.CurrentUserDefaultResponseQuery;
+
+        public override string GetFullDefaultQuery() => DefaultQuery;
     }
 }

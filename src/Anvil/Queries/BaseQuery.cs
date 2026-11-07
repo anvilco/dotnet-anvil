@@ -2,14 +2,14 @@ using System;
 
 namespace Anvil.Queries
 {
+    /// <summary>The pre-1.0 base of the operation holders. See <see cref="GraphQL.Operations"/>.</summary>
+    [Obsolete("Use Anvil.GraphQL.Operations.")]
     public abstract class BaseQuery
     {
-        // NOTE: Be sure to escape each literaly `{` or `}` in `DefaultQuery`
-        // if it is going through the `String.Format` method.
         public abstract string DefaultQuery { get; }
         public abstract string? DefaultResponseQuery { get; }
 
-        public string GetFullDefaultQuery()
+        public virtual string GetFullDefaultQuery()
         {
             return DefaultResponseQuery == null
                 ? DefaultQuery

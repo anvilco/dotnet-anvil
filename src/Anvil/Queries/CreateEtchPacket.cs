@@ -1,65 +1,15 @@
+using System;
+
 namespace Anvil.Queries
 {
+    /// <summary>The pre-1.0 holder of this operation; now the same document as <see cref="GraphQL.Operations"/>.</summary>
+    [Obsolete("Use Anvil.GraphQL.Operations.")]
     public class CreateEtchPacket : BaseQuery
     {
-        public override string DefaultQuery => @"
-            mutation CreateEtchPacket (
-                $name: String,
-                $files: [EtchFile!],
-                $isDraft: Boolean,
-                $isTest: Boolean,
-                $signatureEmailSubject: String,
-                $signatureEmailBody: String,
-                $signatureProvider: String,
-                $signaturePageOptions: JSON,
-                $replyToName: String,
-                $replyToEmail: String,
-                $signers: [JSON!],
-                $webhookURL: String,
-                $data: JSON,
-                $mergePDFs: Boolean,
-            ) {{
-                createEtchPacket (
-                    name: $name,
-                    files: $files,
-                    isDraft: $isDraft,
-                    isTest: $isTest,
-                    mergePDFs: $mergePDFs,
-                    signatureEmailSubject: $signatureEmailSubject,
-                    signatureEmailBody: $signatureEmailBody,
-                    signatureProvider: $signatureProvider,
-                    signaturePageOptions: $signaturePageOptions,
-                    signers: $signers,
-                    replyToName: $replyToName,
-                    replyToEmail: $replyToEmail,
-                    webhookURL: $webhookURL,
-                    data: $data,
-                )
-                {0}
-            }}
-        ";
+        public override string DefaultQuery => GraphQL.Operations.CreateEtchPacketMutation(null);
 
-        public override string DefaultResponseQuery => @"{
-          id
-          eid
-          name
-          detailsURL
-          documentGroup {
-            id
-            eid
-            status
-            files
-            signers {
-              id
-              eid
-              aliasId
-              routingOrder
-              name
-              email
-              status
-              signActionType
-            }
-          }
-        }";
+        public override string? DefaultResponseQuery => GraphQL.Operations.CreateEtchPacketDefaultResponseQuery;
+
+        public override string GetFullDefaultQuery() => DefaultQuery;
     }
 }

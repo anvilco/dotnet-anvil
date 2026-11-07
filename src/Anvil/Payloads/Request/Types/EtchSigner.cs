@@ -14,20 +14,11 @@ namespace Anvil.Payloads.Request.Types
         public string? Email { get; set; }
         public SignerField[]? Fields { get; set; }
 
+        /// <summary><c>email</c> (the default), <c>embedded</c> or <c>in-person</c>. Any value the API accepts is sent as-is.</summary>
         public string SignerType
         {
             get => _signerType;
-            set
-            {
-                if (value != null && (value.ToLower() == "email" || value.ToLower() == "embedded"))
-                {
-                    _signerType = value;
-                }
-                else
-                {
-                    throw new ArgumentException("SignerType must be either `email` or `embedded`");
-                }
-            }
+            set => _signerType = value ?? throw new ArgumentNullException(nameof(value));
         }
 
         public int? RoutingOrder { get; set; }

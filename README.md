@@ -49,6 +49,24 @@ var anvil = new AnvilClient(new AnvilClientOptions
     // BaseUrl = "https://anvil.example.com",
 });
 
+// Fill a PDF template
+var filled = await anvil.FillPdfAsync("pdf-template-eid", new FillPdfPayload
+{
+    Data = new Dictionary<string, object> { ["name"] = "Sally Jones" },
+});
+
+// Create an e-signature packet
+var packet = await anvil.CreateEtchPacketAsync(new CreateEtchPacketPayload
+{
+    Name = "Please sign",
+    Files = new List<EtchFile> { new EtchCastRef { Id = "contract", CastEid = "pdf-template-eid" } },
+    Signers = new List<object>
+    {
+        new EtchSigner { Id = "signer1", Name = "Sally Jones", Email = "sally@example.com",
+            Fields = new List<object> { new SignerField { FileId = "contract", FieldId = "signature1" } } },
+    },
+});
+
 // Any GraphQL query or mutation: returns the response's `data`
 var data = await anvil.RequestGraphQLAsync("query { currentUser { eid } }");
 
@@ -68,6 +86,15 @@ One client per API key: it is thread-safe, paces requests to the API's rate limi
 Every request derives from `BaseUrl`: REST requests go to `{BaseUrl}/api/v1/`,
 GraphQL requests to `{BaseUrl}/graphql` and document downloads to
 `{BaseUrl}/api/document-group/`.
+
+The methods: `FillPdfAsync`, `GeneratePdfAsync` and `DownloadDocumentsAsync`
+(each with `*StreamAsync` and `*ToFileAsync` variants), `CreateEtchPacketAsync`,
+`GetEtchPacketAsync`, `GenerateEtchSignUrlAsync`, `ForgeSubmitAsync`,
+`RemoveWeldDataAsync`, `GetCurrentUserAsync`, and the generic
+`RequestGraphQLAsync` and `RequestRestAsync`. The payload types in
+`Anvil.Payloads` (`FillPdfPayload`, `GeneratePdfPayload`,
+`CreateEtchPacketPayload`, `EtchSigner`, ...) extend the types generated from the
+API's schemas, so every documented option is available with XML docs.
 
 The `RestClient` and `GraphQLClient` of earlier versions still work, as thin
 wrappers over `AnvilClient`, and are obsolete:

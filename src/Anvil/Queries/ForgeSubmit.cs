@@ -1,58 +1,15 @@
+using System;
+
 namespace Anvil.Queries
 {
+    /// <summary>The pre-1.0 holder of this operation; now the same document as <see cref="GraphQL.Operations"/>.</summary>
+    [Obsolete("Use Anvil.GraphQL.Operations.")]
     public class ForgeSubmit : BaseQuery
     {
-        public override string DefaultQuery => @"
-            mutation ForgeSubmit(
-                $forgeEid: String!,
-                $weldDataEid: String,
-                $submissionEid: String,
-                $payload: JSON!,
-                $currentStep: Int,
-                $complete: Boolean,
-                $isTest: Boolean,
-                $timezone: String,
-                $groupArrayId: String,
-                $groupArrayIndex: Int,
-                $errorType: String,
-            ) {{
-                forgeSubmit (
-                    forgeEid: $forgeEid,
-                    weldDataEid: $weldDataEid,
-                    submissionEid: $submissionEid,
-                    payload: $payload,
-                    currentStep: $currentStep,
-                    complete: $complete,
-                    isTest: $isTest,
-                    timezone: $timezone,
-                    groupArrayId: $groupArrayId,
-                    groupArrayIndex: $groupArrayIndex,
-                    errorType: $errorType
-                ) {0}
-            }}
-        ";
+        public override string DefaultQuery => GraphQL.Operations.ForgeSubmitMutation(null);
 
-        public override string DefaultResponseQuery => @"{
-            id
-            eid
-            payloadValue
-            currentStep
-            completedAt
-            createdAt
-            updatedAt
-            signer {
-                name
-                email
-                status
-                routingOrder
-            }
-            weldData {
-                id
-                eid
-                isTest
-                isComplete
-                agents
-            }
-        }";
+        public override string? DefaultResponseQuery => GraphQL.Operations.ForgeSubmitDefaultResponseQuery;
+
+        public override string GetFullDefaultQuery() => DefaultQuery;
     }
 }
