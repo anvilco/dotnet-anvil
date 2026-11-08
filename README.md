@@ -525,7 +525,7 @@ The payloads move from `Anvil.Payloads.Request` and `Anvil.Payloads.Request.Type
 
 Any object with the right JSON shape works as a payload too: an anonymous object, a dictionary, a `JObject` or a JSON string. The `Anvil.Payloads.Response` types are gone: the methods return the generated types in `Anvil.Types.GraphQL` (`EtchPacket`, `Submission`, `User`).
 
-`AnvilClientException.HttpStatusCode` is `StatusCode` (an `int`, 0 when there was no response), `ResponseHeaders` is `Headers`, and the messages that were in `Data["Message1"]`, `Data["Message2"]`, ... are in `Errors`.
+`AnvilClientException.HttpStatusCode` is `StatusCode` (an `int`, 0 when there was no response), `ResponseHeaders` is `Headers`, and the messages that were in `Data["Message1"]`, `Data["Message2"]`, ... are in `Errors`. Its properties are read-only; `ResponseContent` could be set before.
 
 Behavior that changed:
 
