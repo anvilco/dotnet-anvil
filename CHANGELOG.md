@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.0.0] - 2026-11-08
+
 - BREAKING: The pre-1.0 API is removed: `RestClient`, `GraphQLClient`, `BaseClient`, `ClientConstants`, the `Anvil.Queries` classes, the `Anvil.Payloads.Request` and `Anvil.Payloads.Response` types, and `AnvilClientException`'s `HttpStatusCode`, `ResponseHeaders` and `Data["Message1"]` (use `StatusCode`, `Headers` and `Errors`). "Upgrading from 0.x" in the README maps each one to its replacement.
 - BREAKING: One `AnvilClient` replaces `RestClient` and `GraphQLClient`. One `HttpClient` pipeline sends REST and GraphQL requests, so auth, rate limiting, retries and errors are the same for both. The `GraphQL.Client` dependency is gone, and with it a transitive `System.Text.Encodings.Web` 4.7.0 flagged as a critical vulnerability. The package targets `netstandard2.0` and `net10.0`.
   - `new AnvilClient(new AnvilClientOptions { ApiKey = ..., BaseUrl = ... })` sends every request to one host: REST to `{BaseUrl}/api/...`, GraphQL to `{BaseUrl}/graphql` (no longer `https://graphql.useanvil.com`). `BaseUrl` defaults to production. `new AnvilClient(apiKey)` reads `ANVIL_API_KEY` from the environment when the key is null.
