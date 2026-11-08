@@ -1,21 +1,35 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Authors>useanvil.com, Allan Almazan</Authors>
         <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
-        <PackageVersion>0.6.0</PackageVersion>
-        <PackageId>Anvil</PackageId>
-        <Version>0.6.0</Version>
-        <Company>useanvil.com</Company>
-        <PackageTags>PDF;Anvil</PackageTags>
-        <Description>.NET/C# API client for Anvil. https://www.useanvil.com/docs</Description>
-        <RepositoryUrl>https://github.com/anvilco/dotnet-anvil</RepositoryUrl>
-        <RepositoryBranch>main</RepositoryBranch>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageIcon>images/icon.png</PackageIcon>
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <!-- Bumped by dev/release.sh; the Publish workflow checks the tag matches -->
+        <Version>1.0.0-alpha.1</Version>
+
+        <PackageId>Anvil</PackageId>
+        <Authors>useanvil.com, Allan Almazan</Authors>
+        <Company>useanvil.com</Company>
+        <Description>.NET/C# API client for Anvil: PDF filling, PDF generation, Etch e-signatures and Workflows. https://www.useanvil.com/docs</Description>
+        <PackageTags>PDF;Anvil;e-signature;esign;workflows;forms</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/anvilco/dotnet-anvil</PackageProjectUrl>
+        <PackageReleaseNotes>https://github.com/anvilco/dotnet-anvil/blob/main/CHANGELOG.md</PackageReleaseNotes>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>images/icon.png</PackageIcon>
+        <RepositoryUrl>https://github.com/anvilco/dotnet-anvil</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryBranch>main</RepositoryBranch>
+
+        <!-- XML docs ship in the package; the symbols package and Source Link make it debuggable -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <!-- CS1591: not every public member has docs; CS1573: options and cancellationToken are not documented on every method -->
+        <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     </PropertyGroup>
 
     <ItemGroup>

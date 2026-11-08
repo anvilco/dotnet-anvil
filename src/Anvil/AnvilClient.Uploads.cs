@@ -7,7 +7,7 @@ namespace Anvil
         /// <summary>
         /// Prepares a file on disk for a multipart upload with a GraphQL mutation.
         /// Put the result anywhere in the mutation's variables under a <c>file</c>
-        /// key, e.g. <see cref="Payloads.DocumentUpload.File"/> in
+        /// key, e.g. <see cref="Types.GraphQL.EtchFile.File"/> of a <see cref="Payloads.DocumentUpload"/> in
         /// <see cref="CreateEtchPacketAsync"/>, or <c>$file: Upload!</c> of
         /// <c>createCast</c> with <see cref="RequestGraphQLAsync(string, object?, string?, RequestOptions?, System.Threading.CancellationToken)"/>.
         /// Like node-anvil's <c>Anvil.prepareGraphQLFile</c>.

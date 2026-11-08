@@ -67,7 +67,7 @@ namespace Anvil
     /// <summary>
     /// The API answered with an error: a status outside 2xx, a GraphQL response
     /// with <c>errors</c>, or a response that isn't the JSON it claims to be.
-    /// <see cref="Errors"/> holds the normalized errors; <see cref="Message"/> is
+    /// <see cref="Errors"/> holds the normalized errors; <see cref="Exception.Message"/> is
     /// <c>"{status}: {name}: {message} (field: message, ...)"</c>.
     /// </summary>
     public class AnvilClientException : Exception

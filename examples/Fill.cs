@@ -1,72 +1,45 @@
-// Fill a PDF template with your data via the Anvil API.
+// Fill a PDF template with data and save the PDF.
 // Docs: https://www.useanvil.com/docs/api/fill-pdf
 //
-// Run it from a project with the Anvil package installed
-// (dotnet add package Anvil):
-//   ANVIL_API_KEY=yourKey dotnet run
+//   ANVIL_API_KEY=yourKey dotnet run --project examples -- fill [pdfTemplateEid] [output.pdf]
+using Anvil;
+using Anvil.Payloads;
 
-using Anvil.Client;
+namespace AnvilExamples;
 
-class FillExample
+public static class Fill
 {
-    static async Task Main(string[] args)
+    public static async Task Run(AnvilClient anvil, string[] args)
     {
-        var apiKey = Environment.GetEnvironmentVariable("ANVIL_API_KEY");
-
         // A sample PDF template available to any account. See
         // https://www.useanvil.com/help/tutorials/set-up-a-pdf-template to
-        // set up your own template.
-        var pdfTemplateEid = "05xXsZko33JIO6aq5Pnr";
+        // set up your own template, and find its eid on its page.
+        var pdfTemplateEid = args.Length > 0 ? args[0] : "05xXsZko33JIO6aq5Pnr";
+        var outputPath = args.Length > 1 ? args[1] : "fill-output.pdf";
 
-        var longText =
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
-
-        var payload = new Anvil.Payloads.Request.FillPdf
+        var payload = new FillPdfPayload
         {
             Title = "My PDF Title",
-            FontSize = 10,
             TextColor = "#333333",
-            // Keys here match the field IDs configured on the PDF template
-            Data = new Dictionary<string, dynamic>()
+            // Field ids come from the template's API info page. A field may take
+            // an object for structured data, like a phone number or an address.
+            Data = new Dictionary<string, object>
             {
-                {"shortText", "Hello World!"},
-                {"date", "2024-01-15"},
-                {
-                    "name", new Dictionary<string, object>()
-                    {
-                        {"firstName", "Robin"},
-                        {"mi", "W"},
-                        {"lastName", "Smith"}
-                    }
-                },
-                {"email", "testy@example.com"},
-                {
-                    "usAddress", new Dictionary<string, object>()
-                    {
-                        {"street1", "123 Main St #234"},
-                        {"city", "San Francisco"},
-                        {"state", "CA"},
-                        {"zip", "94106"},
-                        {"country", "US"}
-                    }
-                },
-                {"ssn", "456454567"},
-                {"ein", "897654321"},
-                {"checkbox", true},
-                {"decimalNumber", 12345.67},
-                {"dollar", 123.45},
-                {"integer", 12345},
-                {"percent", 50.3},
-                {"longText", longText}
-            }
+                ["shortTextField"] = "Hello World!",
+                ["date"] = "2026-01-30",
+                ["name"] = new { firstName = "Sally", lastName = "Jones" },
+                ["email"] = "sally@example.com",
+                ["phone"] = new { num = "5554443333", region = "US", baseRegion = "US" },
+                ["usAddress"] = new { street1 = "123 Main St #234", city = "San Francisco", state = "CA", zip = "94106", country = "US" },
+                ["checkbox"] = true,
+                ["dollar"] = 123.45,
+                ["integer"] = 12345,
+                ["number"] = 12345.67,
+            },
         };
 
-        var client = new RestClient(apiKey);
-        var wasWritten = await client.FillPdf(
-            pdfTemplateEid, payload, "./fill-output.pdf");
-
-        Console.WriteLine(wasWritten
-            ? "Filled PDF saved to fill-output.pdf"
-            : "There was an error filling the PDF");
+        // Fills the latest published version. Pass AnvilClient.VERSION_LATEST to fill a draft.
+        await anvil.FillPdfToFileAsync(pdfTemplateEid, payload, outputPath);
+        Console.WriteLine($"Filled {pdfTemplateEid} and saved the PDF to {outputPath}");
     }
 }

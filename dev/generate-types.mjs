@@ -45,6 +45,18 @@ const TYPES_DIR = path.join(root, 'src', 'Anvil', 'Types')
 
 const INDENT = '    '
 
+// GraphQL types whose names would clash with a type in a namespace every .NET
+// project imports by default (ImplicitUsings), e.g. File with System.IO.File:
+// a file with `using Anvil.Types.GraphQL;` couldn't call File.WriteAllBytes
+// unqualified. GeneratedTypesTests fails when the schema adds another.
+const GRAPHQL_RENAMES = {
+  File: { name: 'AnvilFile', clashesWith: 'System.IO.File' },
+}
+
+function graphqlClassName(name) {
+  return GRAPHQL_RENAMES[name]?.name ?? name
+}
+
 // Reserved by System.Object, so a property can't take the name
 const OBJECT_MEMBERS = new Set(['Equals', 'GetHashCode', 'GetType', 'ToString', 'ReferenceEquals', 'MemberwiseClone'])
 
@@ -215,7 +227,7 @@ function graphqlType(type, json) {
     if (!mapped) throw new Error(`Unexpected scalar ${type.name}`)
     return mapped
   }
-  return type.name
+  return graphqlClassName(type.name)
 }
 
 function graphqlDefault(value) {
@@ -243,7 +255,13 @@ function generateGraphql(schema) {
     if (!isObjectType(type) && !isInputObjectType(type)) continue
 
     const isInput = isInputObjectType(type)
-    const cls = new ClassBuilder(type.name, { description: type.description })
+    const className = graphqlClassName(type.name)
+    const rename = GRAPHQL_RENAMES[type.name]
+    const renamed = rename
+      ? `The \`${type.name}\` type of the Anvil GraphQL schema, named \`${className}\` so it doesn't clash with \`${rename.clashesWith}\`.`
+      : null
+    const description = [type.description?.trim(), renamed].filter(Boolean).join('\n\n')
+    const cls = new ClassBuilder(className, { description })
     for (const field of Object.values(type.getFields())) {
       const descriptions = [field.description?.trim()].filter(Boolean)
       const defaultValue = isInput ? defaultOf(field) : undefined
@@ -258,8 +276,8 @@ function generateGraphql(schema) {
         deprecated: field.deprecationReason ?? null,
       })
     }
-    writeFile(dir, type.name, SCHEMA_SOURCE, 'Anvil.Types.GraphQL', usings, [cls])
-    names.push(type.name)
+    writeFile(dir, className, SCHEMA_SOURCE, 'Anvil.Types.GraphQL', usings, [cls])
+    names.push(className)
   }
   return names
 }

@@ -194,5 +194,43 @@ namespace AnvilTests.Types
             Assert.Equal(2, submission.CurrentStep);
             Assert.Equal(1, (int)submission.PayloadValue!["a"]!);
         }
+
+        // The namespaces a project with ImplicitUsings imports, as `dotnet new console` does
+        private static readonly string[] ImplicitUsings =
+        {
+            "System", "System.IO", "System.Collections.Generic", "System.Linq",
+            "System.Net.Http", "System.Threading", "System.Threading.Tasks",
+        };
+
+        [Fact]
+        public void NoPublicTypeClashesWithATypeInAnImplicitUsingsNamespace()
+        {
+            // A clash makes the name ambiguous (CS0104) in any file that imports
+            // the Anvil namespace too; the generator renames such GraphQL types
+            // in GRAPHQL_RENAMES (dev/generate-types.mjs).
+            var bcl = new[] { typeof(object), typeof(System.IO.File), typeof(Enumerable), typeof(System.Net.Http.HttpClient), typeof(List<>), typeof(System.Threading.Thread) }
+                .Select(t => t.Assembly)
+                .Distinct()
+                .SelectMany(a => a.GetExportedTypes())
+                .Where(t => ImplicitUsings.Contains(t.Namespace))
+                .Select(t => t.Name.Split('`')[0])
+                .ToHashSet();
+
+            var clashes = typeof(Anvil.AnvilClient).Assembly.GetExportedTypes()
+                .Where(t => !t.IsNested && bcl.Contains(t.Name.Split('`')[0]))
+                .Select(t => t.FullName)
+                .ToList();
+
+            Assert.Empty(clashes);
+        }
+
+        [Fact]
+        public void TheSchemasFileTypeIsAnvilFile()
+        {
+            Assert.Null(typeof(GeneratedModel).Assembly.GetType("Anvil.Types.GraphQL.File"));
+            var file = Deserialize<AnvilFile>(@"{""name"":""a.pdf"",""mimetype"":""application/pdf"",""src"":""https://x/a.pdf""}");
+            Assert.Equal("a.pdf", file.Name);
+            Assert.Equal("application/pdf", file.Mimetype);
+        }
     }
 }
