@@ -29,6 +29,10 @@ for entry in lib/netstandard2.0/Anvil.dll lib/net10.0/Anvil.dll lib/netstandard2
 done
 
 echo "Installing it into a scratch app..."
+# Its own package folder: the global one (and CI's cache of it) may already
+# hold a package of this version from an earlier run, which NuGet would use
+# instead of the one just packed.
+export NUGET_PACKAGES="$OUT/packages"
 dotnet new console --output "$APP" --framework net10.0 --no-restore >/dev/null
 cat > "$APP/nuget.config" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
