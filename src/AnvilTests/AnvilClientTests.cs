@@ -183,7 +183,6 @@ namespace AnvilTests
             Assert.Equal("200: AuthorizationError: Not authorized", ex.Message);
             Assert.Equal("AuthorizationError", Assert.Single(ex.Errors).Name);
             Assert.Equal(JTokenType.Null, ex.ResponseData!["currentUser"]!.Type);
-            Assert.Equal("Not authorized", ex.Data["Message1"]);
         }
 
         // ------------------------------------------------------------------
@@ -605,24 +604,6 @@ namespace AnvilTests
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => client.RequestRestAsync(HttpMethod.Get, "/api/v1/x", cancellationToken: cancel.Token));
         }
 
-        // ------------------------------------------------------------------
-        // The pre-1.0 clients
-
-        [Fact]
-        public async Task TheOldClients_GoThroughAnvilClient()
-        {
-#pragma warning disable CS0618
-            using var rest = new Anvil.Client.RestClient("old-key-" + Guid.NewGuid().ToString("N"), "https://anvil.example.com");
-            using var graphql = new Anvil.Client.GraphQLClient("old-key-" + Guid.NewGuid().ToString("N"), "https://anvil.example.com");
-#pragma warning restore CS0618
-
-            Assert.Equal("https://anvil.example.com", rest.Anvil.BaseUrl);
-            Assert.Equal("https://anvil.example.com", graphql.Anvil.BaseUrl);
-            Assert.Equal(ClientConstants.VERSION_LATEST, AnvilClient.VERSION_LATEST);
-            Assert.Equal(ClientConstants.VERSION_LATEST_PUBLISHED, AnvilClient.VERSION_LATEST_PUBLISHED);
-            await Task.CompletedTask;
-        }
-
         [Fact]
         public async Task Issue17_A429WithANonJsonBody_DoesNotCrash()
         {
@@ -638,10 +619,7 @@ namespace AnvilTests
             Assert.Equal(403, ex.StatusCode);
             Assert.Equal("403: Forbidden", ex.Message);
             Assert.Equal("Forbidden", ex.ResponseContent);
-#pragma warning disable CS0618
-            Assert.Equal(System.Net.HttpStatusCode.Forbidden, ex.HttpStatusCode);
-            Assert.True(ex.ResponseHeaders!.ContainsKey("Content-Type"));
-#pragma warning restore CS0618
+            Assert.True(ex.Headers.ContainsKey("Content-Type"));
         }
 
         [Fact]

@@ -481,9 +481,52 @@ Every request is retried on `500`, `502`, `503` and `504`, and when it couldn't 
 
 A request that was sent but got no response within `Timeout` (5 minutes) throws `TimeoutException` and is not retried, since the API may have processed it. Pass a `RequestOptions { Timeout = ... }` to a method to override the timeout for that request.
 
-## Earlier versions
+## Upgrading from 0.x
 
-The `RestClient` and `GraphQLClient` of versions before 1.0 still work, as thin wrappers over `AnvilClient`, and are marked obsolete; see [CHANGELOG.md](CHANGELOG.md) for what changed in 1.0 and how to move over.
+1.0 replaces the pre-1.0 `RestClient` and `GraphQLClient` with one `AnvilClient`, and removes the old API. Every method is `async`, returns a typed result, and throws an [`AnvilClientException`](#errors) on an error response.
+
+| 0.x | 1.0 |
+| --- | --- |
+| `new RestClient(apiKey)`, `new GraphQLClient(apiKey)` | `new AnvilClient(apiKey)`, one client for both |
+| `RestClient.FillPdf(id, payload)` returns a `Stream` | `FillPdfAsync(id, payload)` returns `byte[]`; `FillPdfStreamAsync` a `Stream` |
+| `RestClient.FillPdf(id, payload, destFile)` | `FillPdfToFileAsync(id, payload, path)` |
+| `RestClient.FillPdf(id, payload, versionNumber)` | `FillPdfAsync(id, payload, versionNumber)` |
+| `RestClient.GeneratePdf(payload)` returns `HttpContent` | `GeneratePdfAsync(payload)` returns `byte[]`; `GeneratePdfStreamAsync`, `GeneratePdfToFileAsync` |
+| `RestClient.DownloadDocuments(eid)` | `DownloadDocumentsAsync(eid)`; `DownloadDocumentsStreamAsync`, `DownloadDocumentsToFileAsync` |
+| `RestClient.SendGetRequest(uri)`, `SendPostRequest(uri, content)` | `RequestRestAsync`, `RequestRestBytesAsync`, `RequestRestStreamAsync`, `SendRestAsync` |
+| `GraphQLClient.SendQuery(query, variables)` returns the whole response | `RequestGraphQLAsync(query, variables)` returns its `data` and throws on `errors` |
+| `GraphQLClient.CreateEtchPacket(payload)` | `CreateEtchPacketAsync(payload)` returns an `EtchPacket` |
+| `GraphQLClient.GetEtchPacket(eid)` | `GetEtchPacketAsync(eid)` returns an `EtchPacket` |
+| `GraphQLClient.GenerateEtchSignUrl(signerEid, clientUserId)` | `GenerateEtchSignUrlAsync(signerEid, clientUserId)` returns the URL |
+| `GraphQLClient.ForgeSubmit(payload)` | `ForgeSubmitAsync(payload)` returns a `Submission` |
+| `GraphQLClient.RemoveWeldData(eid)` | `RemoveWeldDataAsync(eid)` returns a `bool` |
+| `GraphQLClient.GetCurrentUser()` | `GetCurrentUserAsync()` returns a `User` |
+| `ClientConstants.VERSION_LATEST`, `VERSION_LATEST_PUBLISHED` | `AnvilClient.VERSION_LATEST`, `VERSION_LATEST_PUBLISHED` |
+| `Anvil.Queries.*` | `Anvil.GraphQL.Operations` |
+
+The payloads move from `Anvil.Payloads.Request` and `Anvil.Payloads.Request.Types` to `Anvil.Payloads`, with every option the API documents:
+
+| 0.x | 1.0 |
+| --- | --- |
+| `Request.FillPdf` | `FillPdfPayload` |
+| `Request.GeneratePdf` with `GeneratePdfItem`, `GeneratePdfTable` | `GeneratePdfPayload` with `MarkdownContent`, `MarkdownTable` |
+| `Request.GeneratePdf` with `GeneratePdfHtml` | `GeneratePdfPayload` with `HtmlContent` |
+| `Request.CreateEtchPacket` | `CreateEtchPacketPayload` |
+| `Request.ForgeSubmit` | `ForgeSubmitPayload` |
+| `Request.Types.EtchSigner`, `SignerField`, `SignatureField`, `Rect` | `EtchSigner`, `SignerField`, `SignatureField`, `Rect` |
+| `Request.Types.EtchCastRef`, `DocumentUpload`, `DocumentMarkup`, `DocumentMarkdown` | The same names in `Anvil.Payloads` |
+| `Request.Types.Base64FileUpload` | `Base64Upload`, or a file from [`PrepareGraphQLFile`](#preparegraphqlfile) |
+
+Any object with the right JSON shape works as a payload too: an anonymous object, a dictionary, a `JObject` or a JSON string. The `Anvil.Payloads.Response` types are gone: the methods return the generated types in `Anvil.Types.GraphQL` (`EtchPacket`, `Submission`, `User`).
+
+`AnvilClientException.HttpStatusCode` is `StatusCode` (an `int`, 0 when there was no response), `ResponseHeaders` is `Headers`, and the messages that were in `Data["Message1"]`, `Data["Message2"]`, ... are in `Errors`.
+
+Behavior that changed:
+
+- GraphQL requests go to `https://app.useanvil.com/graphql` rather than `https://graphql.useanvil.com`. If a firewall allows only certain hosts, allow `app.useanvil.com`.
+- The API key is sent as `Basic base64(apiKey + ":")`, with the trailing colon the other Anvil clients send.
+- The default fields returned by `CreateEtchPacketAsync`, `GetEtchPacketAsync` and `ForgeSubmitAsync` are node-anvil's. `documentGroup.id` and `weldData.id` are gone; use `eid`. Pass a `responseQuery` to choose the fields.
+- Requests are rate limited and retried (see [Rate limits](#rate-limits) and [Retries](#retries)), and time out after 5 minutes.
 
 ## Examples
 

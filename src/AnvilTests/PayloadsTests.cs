@@ -54,15 +54,6 @@ namespace AnvilTests
         }
 
         [Fact]
-        public void TheOldEtchSigner_AcceptsInPersonToo()
-        {
-            var signer = new Anvil.Payloads.Request.Types.EtchSigner { SignerType = "in-person" };
-
-            Assert.Equal("in-person", signer.SignerType);
-            Assert.Equal("in-person", Serialize(signer)["signerType"]!.ToString());
-        }
-
-        [Fact]
         public void CreateEtchPacket_DefaultsToASentTestPacket()
         {
             var json = Serialize(new CreateEtchPacketPayload { Name = "Packet" });
@@ -214,17 +205,6 @@ namespace AnvilTests
 
             Assert.DoesNotContain("documentGroup {\n    id", Operations.CreateEtchPacketMutation());
             Assert.Contains("documentGroup {\n    eid", Operations.EtchPacketQuery());
-        }
-
-        [Fact]
-        public void TheOldQueryClasses_ReturnTheSameDocuments()
-        {
-#pragma warning disable CS0618
-            Assert.Equal(Operations.CreateEtchPacketMutation(), new Anvil.Queries.CreateEtchPacket().GetFullDefaultQuery());
-            Assert.Equal(Operations.EtchPacketQuery(), new Anvil.Queries.GetEtchPacket().GetFullDefaultQuery());
-            Assert.Equal(Operations.ForgeSubmitMutation(), new Anvil.Queries.ForgeSubmit().GetFullDefaultQuery());
-            Assert.Equal(Operations.RemoveWeldDataMutation(), new Anvil.Queries.RemoveWeldData().GetFullDefaultQuery());
-#pragma warning restore CS0618
         }
     }
 }
