@@ -101,17 +101,6 @@ namespace Anvil
             ResponseContent = responseContent;
             ResponseData = responseData;
             Response = response;
-
-            // Each message is also in Data as Message1, Message2, ..., as before 1.0
-            var count = 1;
-            foreach (var error in errors)
-            {
-                if (error.Message != null)
-                {
-                    Data[$"Message{count}"] = error.Message;
-                    count++;
-                }
-            }
         }
 
         /// <summary>The normalized errors. At least one.</summary>
@@ -132,39 +121,12 @@ namespace Anvil
         /// <summary>The response, with its body already read.</summary>
         public HttpResponseMessage? Response { get; }
 
-        [Obsolete("Use StatusCode, which is 0 when there was no response.")]
-        public HttpStatusCode? HttpStatusCode => StatusCode == 0 ? (HttpStatusCode?)null : (HttpStatusCode)StatusCode;
-
-        [Obsolete("Use Headers.")]
-        public Dictionary<string, IEnumerable<string>>? ResponseHeaders
-            => Headers.Count == 0 ? null : new Dictionary<string, IEnumerable<string>>(Headers.ToDictionary(h => h.Key, h => h.Value), StringComparer.OrdinalIgnoreCase);
-
         private static string FormatMessage(IReadOnlyList<AnvilError> errors, int statusCode)
         {
             var description = errors.Count > 0
                 ? string.Join("; ", errors.Select(e => e.ToString()))
                 : "Unknown Error";
             return statusCode > 0 ? $"{statusCode}: {description}" : description;
-        }
-    }
-
-    /// <summary>
-    /// The base of the pre-1.0 <see cref="Client.RestClient"/> and <see cref="Client.GraphQLClient"/>.
-    /// </summary>
-    [Obsolete("Use AnvilClient.")]
-    public abstract class BaseClient
-    {
-        protected string? _apiKey;
-
-        /// <summary>The API key, base64 encoded with its trailing colon, as the Basic auth header carries it.</summary>
-        protected string EncodeApiKey()
-        {
-            if (string.IsNullOrWhiteSpace(_apiKey))
-            {
-                throw new AnvilClientException("API key cannot be null or empty");
-            }
-
-            return Auth.Header(_apiKey, null).Substring("Basic ".Length);
         }
     }
 }

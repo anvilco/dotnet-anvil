@@ -30,6 +30,14 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+        <!--
+          Package validation runs on pack: it fails when the netstandard2.0 and
+          net10.0 builds don't expose the same API. Once a major is published,
+          PackageValidationBaselineVersion set to it (e.g. 1.0.0) also fails the
+          pack on any breaking change against it; see "Publishing" in CONTRIBUTING.md.
+        -->
+        <EnablePackageValidation>true</EnablePackageValidation>
     </PropertyGroup>
 
     <ItemGroup>

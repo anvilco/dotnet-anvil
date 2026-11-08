@@ -39,12 +39,6 @@ namespace Anvil
             return trimmed;
         }
 
-        public static string GraphQLEndpoint(string? baseUrl) => NormalizeBaseUrl(baseUrl) + "/graphql";
-
-        // Ends with a `/` so relative paths append to it. A path with a leading
-        // `/` replaces the whole path instead (`/fill/my.pdf` would drop `api/v1`).
-        public static string RestEndpoint(string? baseUrl) => NormalizeBaseUrl(baseUrl) + "/api/v1/";
-
         // https://www.useanvil.com/docs/api/fill-pdf
         public const string FillPdf = @"/api/v1/fill/{0}.pdf";
 
@@ -53,16 +47,5 @@ namespace Anvil
 
         // https://www.useanvil.com/docs/api/e-signatures#downloading-documents
         public const string DownloadDocuments = @"/api/document-group/{0}.zip";
-    }
-
-    public static class ClientConstants
-    {
-        // Used with `RestClient.FillPdf`.
-        // Version number to use for latest versions (usually drafts)
-        public const int VERSION_LATEST = -1;
-
-        // Version number to use for the latest published version.
-        // This is the default when a version is not provided.
-        public const int VERSION_LATEST_PUBLISHED = -2;
     }
 }

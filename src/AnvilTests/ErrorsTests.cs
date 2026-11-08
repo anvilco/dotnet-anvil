@@ -108,8 +108,6 @@ namespace AnvilTests
 
             Assert.Equal("400: ValidationError: Invalid (data: Required); Second", ex.Message);
             Assert.Equal(400, ex.StatusCode);
-            Assert.Equal("Invalid", ex.Data["Message1"]);
-            Assert.Equal("Second", ex.Data["Message2"]);
             Assert.Empty(ex.Headers);
         }
 
@@ -119,10 +117,8 @@ namespace AnvilTests
             var ex = new AnvilClientException(new[] { new AnvilError("TypeError", "fetch failed") }, 0);
 
             Assert.Equal("TypeError: fetch failed", ex.Message);
-#pragma warning disable CS0618
-            Assert.Null(ex.HttpStatusCode);
-            Assert.Null(ex.ResponseHeaders);
-#pragma warning restore CS0618
+            Assert.Equal(0, ex.StatusCode);
+            Assert.Empty(ex.Headers);
         }
 
         [Fact]

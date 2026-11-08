@@ -7,6 +7,16 @@ name: Sync API Types
 # release workflow sends `anvilco-types-published` here. That dispatch is
 # best-effort with no retry, so the weekly cron is a backstop for a dropped one.
 # python-anvil's sync-api-types.yml does the same for python_anvil/types.
+#
+# @anvilco/types takes a major bump when the API removes or changes a type,
+# field or argument, a minor for additions and a patch for descriptions (its
+# README has the policy). The generated types are this package's public API,
+# so a sync across a major is a breaking change here too: the PR says so, its
+# changelog note is marked BREAKING, it is labelled `breaking`, and the GitHub
+# users in the SYNC_BREAKING_REVIEWERS repository variable (comma separated,
+# optional) are asked to review. The bump is worked out from the version
+# dev/package.json pinned before and after the refresh, so a release this
+# workflow missed still counts; the dispatch's `bump` can only raise it.
 
 on:
   repository_dispatch:
@@ -88,6 +98,8 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           TYPES_VERSION: ${{ github.event.client_payload.version }}
           TYPES_RELEASE_URL: ${{ github.event.client_payload.releaseUrl }}
+          DISPATCH_BUMP: ${{ github.event.client_payload.bump }}
+          REVIEWERS: ${{ vars.SYNC_BREAKING_REVIEWERS }}
         run: |
           # Not GITHUB_TOKEN: pushes and PRs made with it don't trigger
           # workflows, so the PR would never get its CI checks.
@@ -102,12 +114,42 @@ jobs:
             exit 0
           fi
 
-          # Note the sync under Unreleased in the changelog, once per release
-          node - <<'JS'
+          # Which @anvilco/types this is, and whether the sync crosses a major,
+          # minor or patch: from the exact version dev/package.json pins on main
+          # and after the refresh. A dispatch's own bump can raise it (never
+          # lower it, since this sync may span releases the dispatch didn't).
+          read -r OLD_VERSION NEW_VERSION TYPES_BUMP < <(node - "$DISPATCH_BUMP" <<'JS'
+          const { execFileSync } = require('child_process')
+          const pinned = (json) => JSON.parse(json).dependencies['@anvilco/types']
+          const next = pinned(require('fs').readFileSync('dev/package.json', 'utf8'))
+          let prev = ''
+          try { prev = pinned(execFileSync('git', ['show', 'HEAD:dev/package.json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })) } catch {}
+          const parse = (v) => (/^(\d+)\.(\d+)\.(\d+)/.exec(v || '') || []).slice(1).map(Number)
+          const [a, b] = [parse(prev), parse(next)]
+          const order = ['patch', 'minor', 'major']
+          let bump = a.length && b.length ? (b[0] !== a[0] ? 'major' : b[1] !== a[1] ? 'minor' : 'patch') : 'patch'
+          const dispatched = process.argv[2]
+          if (order.indexOf(dispatched) > order.indexOf(bump)) bump = dispatched
+          console.log(prev || '-', next, bump)
+          JS
+          )
+          TYPES_VERSION=${TYPES_VERSION:-$NEW_VERSION}
+          TYPES_RELEASE_URL=${TYPES_RELEASE_URL:-https://github.com/anvilco/anvil-js/releases/tag/@anvilco/types@$TYPES_VERSION}
+          echo "@anvilco/types $OLD_VERSION -> $NEW_VERSION: a $TYPES_BUMP sync"
+
+          # Note the sync under Unreleased in the changelog, once per release.
+          # BREAKING on a major, so the next release here is a major: the
+          # generated types are public API, and the API removed or changed some.
+          if [ "$TYPES_BUMP" = major ]; then
+            NOTE="- BREAKING: Sync the generated API types in \`Anvil.Types\` with the production API, which removed or changed types or fields. Each one is listed in the [\`@anvilco/types@$TYPES_VERSION\` release notes]($TYPES_RELEASE_URL)."
+          else
+            NOTE="- Sync the generated API types in \`Anvil.Types\` with the production API."
+          fi
+          NOTE="$NOTE" node - <<'JS'
           const fs = require('fs')
           const path = 'CHANGELOG.md'
           let text = fs.readFileSync(path, 'utf8')
-          const note = '- Sync the generated API types in `Anvil.Types` with the production API.'
+          const note = process.env.NOTE
           const match = /^## \[Unreleased\]\n([\s\S]*?)(?=^## \[|(?![\s\S]))/m.exec(text)
           if (match && !match[1].includes(note)) {
             const body = match[1].replace(/\n+$/, '')
@@ -128,7 +170,17 @@ jobs:
             echo "- \`dev/package.json\`: the \`@anvilco/types\` dependency bumped to the published version; it ships the GraphQL schema and the OpenAPI spec"
             echo "- \`$TYPES_DIR/\`: regenerated from them with \`npm run generate\` in \`dev/\`"
             echo
-            echo "If a type or field was removed or renamed, note it under Unreleased in CHANGELOG.md as a breaking change before merging."
+            case "$TYPES_BUMP" in
+              major)
+                echo "**This sync crosses a major release of \`@anvilco/types\` ($OLD_VERSION to $NEW_VERSION): the API removed or changed types or fields, listed in the [\`@anvilco/types@$TYPES_VERSION\` release notes]($TYPES_RELEASE_URL).** The generated types are this package's public API, so the changelog note is marked BREAKING and the next release must be a major. Review each change before merging. Once a 1.x baseline is set, CI's pack step fails on these changes until they are accepted: run \`dotnet pack src/Anvil -c Release /p:GenerateCompatibilitySuppressionFile=true\` on this branch and commit \`src/Anvil/CompatibilitySuppressions.xml\` (see Versioning in CONTRIBUTING.md)."
+                ;;
+              minor)
+                echo "This sync crosses a minor release of \`@anvilco/types\` ($OLD_VERSION to $NEW_VERSION): the API gained types, fields or values. The next release here is at least a minor."
+                ;;
+              *)
+                echo "This sync is a patch release of \`@anvilco/types\` ($OLD_VERSION to $NEW_VERSION): only descriptions changed."
+                ;;
+            esac
             echo
             echo "A later deploy that changes these files again rebuilds this branch from \`main\`, replacing any edits made here."
           } > "$RUNNER_TEMP/pr-body.md"
@@ -140,14 +192,28 @@ jobs:
           git commit -m "Sync the generated API types from production"
           git push --force origin "$BRANCH"
 
+          TITLE="Sync the generated API types from production"
+          if [ "$TYPES_BUMP" = major ]; then
+            TITLE="$TITLE (breaking API changes)"
+          fi
           if [ -n "$PR" ]; then
-            gh pr edit "$PR" --body-file "$RUNNER_TEMP/pr-body.md"
+            gh pr edit "$PR" --title "$TITLE" --body-file "$RUNNER_TEMP/pr-body.md"
           else
             gh pr create \
-              --title "Sync the generated API types from production" \
+              --title "$TITLE" \
               --body-file "$RUNNER_TEMP/pr-body.md" \
               --base main \
               --head "$BRANCH"
+            PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          fi
+
+          # A breaking sync can't merge as routine: flag it and ask for review.
+          if [ "$TYPES_BUMP" = major ]; then
+            gh label create breaking --color B60205 --description "Removes or changes part of the public API" --force >/dev/null 2>&1 || true
+            gh pr edit "$PR" --add-label breaking || echo "::warning::Could not label PR #$PR as breaking"
+            if [ -n "$REVIEWERS" ]; then
+              gh pr edit "$PR" --add-reviewer "$(printf '%s' "$REVIEWERS" | tr -d ' ')" || echo "::warning::Could not request review of PR #$PR from $REVIEWERS"
+            fi
           fi
 
       # Production moved back to match main (e.g. a rollback before the PR
