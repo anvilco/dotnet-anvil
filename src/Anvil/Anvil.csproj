@@ -6,7 +6,7 @@
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <!-- Bumped by dev/release.sh; the Publish workflow checks the tag matches -->
-        <Version>1.0.0-alpha.1</Version>
+        <Version>1.0.0</Version>
 
         <PackageId>Anvil</PackageId>
         <Authors>useanvil.com, Allan Almazan</Authors>
