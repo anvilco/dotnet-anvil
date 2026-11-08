@@ -488,6 +488,7 @@ A request that was sent but got no response within `Timeout` (5 minutes) throws 
 | 0.x | 1.0 |
 | --- | --- |
 | `new RestClient(apiKey)`, `new GraphQLClient(apiKey)` | `new AnvilClient(apiKey)`, one client for both |
+| `BaseClient` | `AnvilClient` |
 | `RestClient.FillPdf(id, payload)` returns a `Stream` | `FillPdfAsync(id, payload)` returns `byte[]`; `FillPdfStreamAsync` a `Stream` |
 | `RestClient.FillPdf(id, payload, destFile)` | `FillPdfToFileAsync(id, payload, path)` |
 | `RestClient.FillPdf(id, payload, versionNumber)` | `FillPdfAsync(id, payload, versionNumber)` |
@@ -509,13 +510,18 @@ The payloads move from `Anvil.Payloads.Request` and `Anvil.Payloads.Request.Type
 | 0.x | 1.0 |
 | --- | --- |
 | `Request.FillPdf` | `FillPdfPayload` |
-| `Request.GeneratePdf` with `GeneratePdfItem`, `GeneratePdfTable` | `GeneratePdfPayload` with `MarkdownContent`, `MarkdownTable` |
+| `Request.GeneratePdf` with a list of `GeneratePdfItem` and `GeneratePdfTable` | `GeneratePdfPayload` with a list of `MarkdownContent` |
+| `Request.Types.GeneratePdfTableContent`, the `Table` of a `GeneratePdfTable` | `MarkdownTable`, the `Table` of a `MarkdownContent` |
 | `Request.GeneratePdf` with `GeneratePdfHtml` | `GeneratePdfPayload` with `HtmlContent` |
+| `Request.Types.IGeneratePdfData`, `IGeneratePdfListable` | None: `GeneratePdfPayload.Data` is a list of `MarkdownContent`, or an `HtmlContent` |
 | `Request.CreateEtchPacket` | `CreateEtchPacketPayload` |
 | `Request.ForgeSubmit` | `ForgeSubmitPayload` |
 | `Request.Types.EtchSigner`, `SignerField`, `SignatureField`, `Rect` | `EtchSigner`, `SignerField`, `SignatureField`, `Rect` |
 | `Request.Types.EtchCastRef`, `DocumentUpload`, `DocumentMarkup`, `DocumentMarkdown` | The same names in `Anvil.Payloads` |
+| `Request.Types.HtmlCssMarkup`, the `Markup` of a `DocumentMarkup` | `HtmlContent` |
+| `Request.Types.EtchFile`, `IEtchPacketAttachable` | `Anvil.Types.GraphQL.EtchFile`, the base of the file types: `CreateEtchPacketPayload.Files` is a `List<EtchFile>` |
 | `Request.Types.Base64FileUpload` | `Base64Upload`, or a file from [`PrepareGraphQLFile`](#preparegraphqlfile) |
+| `Request.GenerateEtchSignUrlPayload`, `GenerateEtchSignUrlData` | None: `GenerateEtchSignUrlAsync` returns the URL as a `string` |
 
 Any object with the right JSON shape works as a payload too: an anonymous object, a dictionary, a `JObject` or a JSON string. The `Anvil.Payloads.Response` types are gone: the methods return the generated types in `Anvil.Types.GraphQL` (`EtchPacket`, `Submission`, `User`).
 
