@@ -11,7 +11,10 @@ using Newtonsoft.Json.Linq;
 
 namespace Anvil.Types.GraphQL
 {
-    public partial class File : GeneratedModel
+    /// <summary>
+    /// The `File` type of the Anvil GraphQL schema, named `AnvilFile` so it doesn't clash with `System.IO.File`.
+    /// </summary>
+    public partial class AnvilFile : GeneratedModel
     {
         [JsonProperty("encoding")]
         public string? Encoding { get; set; }
