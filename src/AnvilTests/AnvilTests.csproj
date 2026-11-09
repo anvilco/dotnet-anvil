@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!--
+      net48 runs the tests against the package's netstandard2.0 build, the one
+      .NET Framework apps get, on .NET Framework's HTTP stack. It only runs on
+      Windows (CI's test-net48 job); elsewhere, pass -f net10.0.
+    -->
+    <TargetFrameworks>net10.0;net48</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
 
     <IsPackable>false</IsPackable>
@@ -26,6 +32,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Anvil\Anvil.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
 </Project>
