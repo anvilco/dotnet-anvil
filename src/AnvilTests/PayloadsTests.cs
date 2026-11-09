@@ -112,6 +112,16 @@ namespace AnvilTests
         }
 
         [Fact]
+        public void UrlUpload_SendsTheFilenameOnlyWhenGiven()
+        {
+            var json = Serialize(new DocumentUpload { Id = "upload", File = new UrlUpload { Url = "https://example.com/doc.pdf" } })["file"]!;
+
+            Assert.Equal("https://example.com/doc.pdf", json["url"]!.ToString());
+            Assert.Null(json["filename"]);
+            Assert.Equal("doc.pdf", Serialize(new UrlUpload { Url = "https://example.com/x", Filename = "doc.pdf" })["filename"]!.ToString());
+        }
+
+        [Fact]
         public void SignatureField_SerializesItsRect()
         {
             var json = Serialize(new SignatureField { Id = "sig", Type = "signature", PageNum = 1, Rect = new Rect { X = 10, Y = 20.5, Width = 100, Height = 30 } });

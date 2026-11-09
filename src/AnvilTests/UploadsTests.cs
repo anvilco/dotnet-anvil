@@ -162,8 +162,11 @@ namespace AnvilTests
             Assert.StartsWith("application/json", handler.LastRequest.ContentType);
             Assert.Equal("JVBERi0=", JObject.Parse(handler.LastRequest.Body!)["variables"]!["file"]!["data"]!.ToString());
 
-            await client.RequestGraphQLAsync(Mutation, new { file = new { url = "https://example.com/doc.pdf" } });
+            await client.RequestGraphQLAsync(Mutation, new { file = new UrlUpload { Url = "https://example.com/doc.pdf", Filename = "doc.pdf" } });
             Assert.StartsWith("application/json", handler.LastRequest.ContentType);
+            var file = JObject.Parse(handler.LastRequest.Body!)["variables"]!["file"]!;
+            Assert.Equal("https://example.com/doc.pdf", file["url"]!.ToString());
+            Assert.Equal("doc.pdf", file["filename"]!.ToString());
         }
 
         [Fact]
@@ -184,6 +187,9 @@ namespace AnvilTests
 
             var ex = await Assert.ThrowsAsync<ArgumentException>(() => client.RequestGraphQLAsync(Mutation, new { file = _pdfPath }));
             Assert.Contains("PrepareGraphQLFile", ex.Message);
+
+            ex = await Assert.ThrowsAsync<ArgumentException>(() => client.RequestGraphQLAsync(Mutation, new { file = "https://example.com/doc.pdf" }));
+            Assert.Contains("UrlUpload", ex.Message);
 
             ex = await Assert.ThrowsAsync<ArgumentException>(() => client.RequestGraphQLAsync(Mutation, new { file = new { data = "JVBERi0=" } }));
             Assert.Contains("filename and mimetype", ex.Message);

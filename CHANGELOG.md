@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add `UrlUpload` for a file Anvil downloads from a URL: `new DocumentUpload { File = new UrlUpload { Url = "https://...", Filename = "..." } }`, or the `file` of any mutation sent with `RequestGraphQLAsync`. A `file` given as a bare string now suggests it.
+
 ## [v1.0.0] - 2026-11-08
 
 - BREAKING: The pre-1.0 API is removed: `RestClient`, `GraphQLClient`, `BaseClient`, `ClientConstants`, the `Anvil.Queries` classes, the `Anvil.Payloads.Request` and `Anvil.Payloads.Response` types, and `AnvilClientException`'s `HttpStatusCode`, `ResponseHeaders` and `Data["Message1"]` (use `StatusCode`, `Headers` and `Errors`). "Upgrading from 0.x" in the README maps each one to its replacement.

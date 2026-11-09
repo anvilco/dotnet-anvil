@@ -15,9 +15,9 @@ namespace Anvil.Payloads
 
     /// <summary>
     /// A PDF uploaded with the packet. <c>File</c> is a <see cref="Base64Upload"/>,
-    /// or a file prepared with <see cref="AnvilClient.PrepareGraphQLFile(string, string?, string?)"/>
-    /// for a multipart upload. <c>Fields</c> are the <see cref="SignatureField"/>s to
-    /// place on it.
+    /// a <see cref="UrlUpload"/>, or a file prepared with
+    /// <see cref="AnvilClient.PrepareGraphQLFile(string, string?, string?)"/> for a
+    /// multipart upload. <c>Fields</c> are the <see cref="SignatureField"/>s to place on it.
     /// </summary>
     public class DocumentUpload : EtchFile
     {
@@ -50,5 +50,18 @@ namespace Anvil.Payloads
 
         [JsonProperty("mimetype")]
         public string? Mimetype { get; set; } = "application/pdf";
+    }
+
+    /// <summary>
+    /// A file Anvil downloads from a public <c>http</c> or <c>https</c> URL. Without a
+    /// <c>Filename</c>, Anvil takes it from the response's <c>Content-Disposition</c> or the URL.
+    /// </summary>
+    public class UrlUpload : GeneratedModel
+    {
+        [JsonProperty("url", Required = Required.Always)]
+        public string? Url { get; set; }
+
+        [JsonProperty("filename")]
+        public string? Filename { get; set; }
     }
 }
