@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Sync the generated API types in `Anvil.Types` with the production API, from `@anvilco/types@1.0.0`.
+- Remove `Anvil.Types.GraphQL.CardVerification`, an internal type that was briefly in the API's schema when 1.0.0 was generated. No API response ever returned it, so it is treated as a fix: the removal is accepted in `src/Anvil/CompatibilitySuppressions.xml` rather than waiting for a major.
 
 ## [v1.1.0] - 2026-11-09
 
