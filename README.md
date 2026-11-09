@@ -200,7 +200,7 @@ var payload = new CreateEtchPacketPayload
         {
             Id = "upload",
             Title = "Please sign this too",
-            File = AnvilClient.PrepareGraphQLFile("/path/to/file.pdf"),   // or a Base64Upload
+            File = AnvilClient.PrepareGraphQLFile("/path/to/file.pdf"),   // or a Base64Upload or UrlUpload
             Fields = new List<object>
             {
                 new SignatureField { Id = "sig", Type = "signature", PageNum = 0, Rect = new Rect { X = 400, Y = 100, Width = 150, Height = 30 } },
@@ -386,6 +386,14 @@ var data = await anvil.RequestGraphQLAsync(@"
 A request is sent again after a `429` (see [Rate limits](#rate-limits)): a path is reopened and a seekable stream rewound, while a stream that can't seek fails the retry with an error, so prefer a path or bytes. The caller's stream is not disposed.
 
 For a small file, a `Base64Upload` (`Data`, `Filename`, `Mimetype`) is sent inline in the JSON instead.
+
+For a file at a public `http` or `https` URL, a `UrlUpload` (`Url`, and optionally `Filename`) has Anvil download it, so the file never passes through your app:
+
+```cs
+File = new UrlUpload { Url = "https://example.com/contract.pdf", Filename = "contract.pdf" },
+```
+
+Without a `Filename`, Anvil takes it from the download's `Content-Disposition` header or the URL.
 
 ### Options
 

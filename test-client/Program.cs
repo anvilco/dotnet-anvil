@@ -287,6 +287,29 @@ await Check("CreateEtchPacketAsync (base64 upload)", async () =>
     return $"draft {packet.Eid}";
 });
 
+await Check("CreateEtchPacketAsync (URL upload)", async () =>
+{
+    // Anvil downloads the file itself, so it must be public: this repo's copy of the test PDF
+    var packet = await anvil.CreateEtchPacketAsync(new CreateEtchPacketPayload
+    {
+        Name = "Anvil .NET client test (URL upload)",
+        IsTest = true,
+        IsDraft = true,
+        Files = new List<EtchFile>
+        {
+            new DocumentUpload
+            {
+                Id = "testFile",
+                Title = "Test File",
+                File = new UrlUpload { Url = "https://raw.githubusercontent.com/anvilco/dotnet-anvil/main/test-client/assets/dummy.pdf" },
+                Fields = new List<object> { SignatureBox() },
+            },
+        },
+        Signers = new List<object> { EmbeddedSigner() },
+    });
+    return $"draft {packet.Eid}";
+});
+
 await Check("CreateEtchPacketAsync (in-person signer)", async () =>
 {
     // A draft, so no one is asked to sign

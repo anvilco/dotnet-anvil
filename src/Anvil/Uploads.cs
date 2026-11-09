@@ -92,7 +92,7 @@ namespace Anvil
                     case JTokenType.String when isUpload:
                         break;
                     case JTokenType.String:
-                        throw new ArgumentException($"Invalid File schema detected: `file` at {property.Path} is a string. Pass a file with AnvilClient.PrepareGraphQLFile, or a base64 object with data, filename and mimetype.");
+                        throw new ArgumentException($"Invalid File schema detected: `file` at {property.Path} is a string. Pass a file with AnvilClient.PrepareGraphQLFile, a Base64Upload, or a UrlUpload for a file at a URL.");
                     case JTokenType.Object:
                         var obj = (JObject)value;
                         if (obj["data"] != null)

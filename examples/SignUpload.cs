@@ -32,7 +32,7 @@ public static class SignUpload
                 {
                     Id = "uploadedPdf",
                     Title = "Please sign this document",
-                    // Sent as a multipart upload. For a small file, a Base64Upload works too.
+                    // Sent as a multipart upload. For a small file, a Base64Upload works too, and for a file at a URL, a UrlUpload.
                     File = AnvilClient.PrepareGraphQLFile(pdfPath),
                     // Where the signer signs: boxes on the first page, in points from the top left
                     Fields = new List<object>
