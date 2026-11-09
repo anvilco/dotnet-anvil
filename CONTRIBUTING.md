@@ -11,23 +11,25 @@ Build, run the unit tests and check the formatting from the `src` directory:
 ```sh
 cd src
 dotnet build
-dotnet test
+dotnet test --framework net10.0
 dotnet format --verify-no-changes
 ```
+
+The tests also target `net48`, so they run against the package's `netstandard2.0` build, the one .NET Framework apps get, on .NET Framework's HTTP stack. That needs Windows: on macOS and Linux pass `--framework net10.0`, and CI's "Test on .NET Framework 4.8" job runs the `net48` tests. On Windows, a plain `dotnet test` runs both.
 
 `dotnet format` fixes what the formatter can. The settings are in `.editorconfig`. Warnings are errors in every project (`Directory.Build.props`).
 
 Run a single test class or test with a filter:
 
 ```sh
-dotnet test --filter "FullyQualifiedName~HttpTests"
-dotnet test --filter "FullyQualifiedName~UploadsTests.AFilePath_IsSentAsMultipart"
+dotnet test --framework net10.0 --filter "FullyQualifiedName~HttpTests"
+dotnet test --framework net10.0 --filter "FullyQualifiedName~UploadsTests.AFilePath_IsSentAsMultipart"
 ```
 
 The tests in `src/AnvilTests/HttpTests.cs` run the real client against a local HTTP server (`Support/LoopbackServer.cs`), so the auth encoding, multipart bodies, rate limit timing, retries and error handling are checked on the wire. The rest script an `HttpMessageHandler` (`Support/FakeHandler.cs`). CI fails when line coverage of the hand-written code drops below the threshold in `.github/workflows/ci.yml`; the generated `src/Anvil/Types` are excluded as data. To see the coverage locally:
 
 ```sh
-dotnet test /p:CollectCoverage=true /p:Include="[Anvil]*" /p:ExcludeByFile="**/Types/GraphQL/*.cs%2c**/Types/Operations/*.cs%2c**/Types/Rest/*.cs"
+dotnet test --framework net10.0 /p:CollectCoverage=true /p:Include="[Anvil]*" /p:ExcludeByFile="**/Types/GraphQL/*.cs%2c**/Types/Operations/*.cs%2c**/Types/Rest/*.cs"
 ```
 
 The `examples/` project, the `test-client/` and `dev/DumpOperations` are not in the solution; CI builds them so they can't rot:

@@ -44,9 +44,10 @@ jobs:
 
       # Line coverage of the hand-written code (the generated Anvil.Types are
       # data) must stay above the threshold. It is 94% as of the 1.0 rewrite.
+      # net10.0 only: the net48 tests need Windows (test-net48 below).
       - name: Test
         run: >-
-          dotnet test --no-build --verbosity normal
+          dotnet test --no-build --verbosity normal --framework net10.0
           /p:CollectCoverage=true
           /p:CoverletOutput=../../coverage/
           /p:CoverletOutputFormat=cobertura
@@ -74,6 +75,23 @@ jobs:
       # What gets published: pack, install the package into a scratch app, run it
       - name: Pack and install the package
         run: dev/pack-smoke.sh
+
+  # The netstandard2.0 build is what .NET Framework apps get, on .NET
+  # Framework's own HTTP stack, so the tests run there too.
+  test-net48:
+    name: Test on .NET Framework 4.8
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        run: dotnet test src/AnvilTests --framework net48 --verbosity normal
 
   check-graphql:
     name: Check the operations and generated types against the schema

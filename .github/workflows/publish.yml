@@ -70,7 +70,8 @@ jobs:
         working-directory: src
       - run: dotnet build --no-restore -c Release
         working-directory: src
-      - run: dotnet test --no-build -c Release
+      # CI runs the net48 tests on Windows; this job is on Linux
+      - run: dotnet test --no-build -c Release --framework net10.0
         working-directory: src
 
       - name: Pack
