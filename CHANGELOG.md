@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.1.0] - 2026-11-09
+
 - Add `UrlUpload` for a file Anvil downloads from a URL: `new DocumentUpload { File = new UrlUpload { Url = "https://...", Filename = "..." } }`, or the `file` of any mutation sent with `RequestGraphQLAsync`. A `file` given as a bare string now suggests it.
 
 ## [v1.0.0] - 2026-11-08
