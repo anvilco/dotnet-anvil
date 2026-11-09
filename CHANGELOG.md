@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- BREAKING: Sync the generated API types in `Anvil.Types` with the production API, which removed or changed types or fields. Each one is listed in the [`@anvilco/types@1.0.0` release notes](https://github.com/anvilco/anvil-js/releases/tag/@anvilco/types@1.0.0).
+- Sync the generated API types in `Anvil.Types` with the production API, from `@anvilco/types@1.0.0`.
 
 ## [v1.1.0] - 2026-11-09
 
