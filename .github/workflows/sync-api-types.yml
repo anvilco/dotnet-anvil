@@ -30,8 +30,8 @@ concurrency: sync-api-types
 
 env:
   BRANCH: chore/sync-api-types
-  # The specs: the OpenAPI spec, and the package that ships the GraphQL schema
-  SPEC_PATHS: schema dev/package.json dev/package-lock.json
+  # The package that ships the specs (the GraphQL schema and the OpenAPI spec)
+  SPEC_PATHS: dev/package.json dev/package-lock.json
   TYPES_DIR: src/Anvil/Types
 
 jobs:
@@ -74,11 +74,16 @@ jobs:
 
       # One step, so the types are never regenerated from a spec that failed
       # to fetch, and a failed generation is discarded along with the specs.
+      # The dispatch names the version, so the run doesn't depend on npm's
+      # `latest` tag having propagated seconds after the publish (it hadn't,
+      # once, and the run installed the previous version).
       - name: Fetch the specs and generate the types
         id: generate
         continue-on-error: true
+        env:
+          TYPES_VERSION: ${{ github.event.client_payload.version }}
         run: |
-          dev/fetch-schema.sh
+          dev/fetch-schema.sh "${TYPES_VERSION:-latest}"
           npm run generate --prefix dev
 
       - name: Discard the output if that failed
