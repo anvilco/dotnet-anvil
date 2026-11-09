@@ -33,11 +33,14 @@
 
         <!--
           Package validation runs on pack: it fails when the netstandard2.0 and
-          net10.0 builds don't expose the same API. Once a major is published,
-          PackageValidationBaselineVersion set to it (e.g. 1.0.0) also fails the
-          pack on any breaking change against it; see "Publishing" in CONTRIBUTING.md.
+          net10.0 builds don't expose the same API, and on any breaking change
+          against PackageValidationBaselineVersion, the first release of the
+          current major. A deliberate break is accepted in
+          CompatibilitySuppressions.xml, and the next major moves the baseline;
+          see "Versioning" and "Publishing" in CONTRIBUTING.md.
         -->
         <EnablePackageValidation>true</EnablePackageValidation>
+        <PackageValidationBaselineVersion>1.0.0</PackageValidationBaselineVersion>
     </PropertyGroup>
 
     <ItemGroup>
