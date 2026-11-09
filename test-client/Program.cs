@@ -38,6 +38,8 @@ var apiKey = Environment.GetEnvironmentVariable("ANVIL_API_KEY");
 var baseUrl = Env("ANVIL_BASE_URL") ?? "https://staging.useanvil.com";
 var accessToken = Env("ANVIL_ACCESS_TOKEN");
 var pdfToSign = Path.Combine(AppContext.BaseDirectory, "assets", "dummy.pdf");
+// Anvil downloads a URL upload itself, so it must be public: this repo's copy of the test PDF
+var pdfUrl = "https://raw.githubusercontent.com/anvilco/dotnet-anvil/main/test-client/assets/dummy.pdf";
 
 if (string.IsNullOrWhiteSpace(apiKey))
 {
@@ -289,7 +291,6 @@ await Check("CreateEtchPacketAsync (base64 upload)", async () =>
 
 await Check("CreateEtchPacketAsync (URL upload)", async () =>
 {
-    // Anvil downloads the file itself, so it must be public: this repo's copy of the test PDF
     var packet = await anvil.CreateEtchPacketAsync(new CreateEtchPacketPayload
     {
         Name = "Anvil .NET client test (URL upload)",
@@ -301,7 +302,7 @@ await Check("CreateEtchPacketAsync (URL upload)", async () =>
             {
                 Id = "testFile",
                 Title = "Test File",
-                File = new UrlUpload { Url = "https://raw.githubusercontent.com/anvilco/dotnet-anvil/main/test-client/assets/dummy.pdf" },
+                File = new UrlUpload { Url = pdfUrl },
                 Fields = new List<object> { SignatureBox() },
             },
         },
@@ -361,6 +362,31 @@ await Check("RequestGraphQLAsync (multipart upload)", async () =>
                     id = "testFile",
                     title = "Test File",
                     file = AnvilClient.PrepareGraphQLFile(System.IO.File.ReadAllBytes(pdfToSign), "dummy.pdf"),
+                    fields = new[] { SignatureBox() },
+                },
+            },
+            signers = new[] { EmbeddedSigner() },
+        });
+    return $"draft {data["createEtchPacket"]?["eid"] ?? throw new Exception("Expected an eid")}";
+});
+
+await Check("RequestGraphQLAsync (URL upload)", async () =>
+{
+    // A URL upload in the variables of a mutation sent with the generic method, with a filename
+    var data = await anvil.RequestGraphQLAsync(@"
+        mutation TestClientUrlUpload($name: String, $files: [EtchFile!], $signers: [JSON!]) {
+          createEtchPacket(name: $name, isDraft: true, isTest: true, files: $files, signers: $signers) { eid }
+        }",
+        new
+        {
+            name = "Anvil .NET client test (RequestGraphQLAsync URL upload)",
+            files = new[]
+            {
+                new
+                {
+                    id = "testFile",
+                    title = "Test File",
+                    file = new UrlUpload { Url = pdfUrl, Filename = "url-upload.pdf" },
                     fields = new[] { SignatureBox() },
                 },
             },
