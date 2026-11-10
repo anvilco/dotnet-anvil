@@ -82,33 +82,12 @@ A deliberate break, such as merging a breaking sync, fails `dotnet pack` until i
 
 ## Publishing
 
-Publishing to NuGet is done by the [Publish workflow](.github/workflows/publish.yml) when a version tag is pushed, in two steps: the workflow builds, tests and packs the release, and a maintainer approves the publish job. Merging to `main` does not publish anything.
+Releases are run from [anvilco/package-ops](https://github.com/anvilco/package-ops), the private repository that releases every Anvil package: Actions → **Release** → **Run workflow**, pick `anvilco/dotnet-anvil` and the increment. Merging to `main` does not publish anything, and nothing in this repository publishes.
 
-1. On a branch, bump the version and release the `[Unreleased]` section of `CHANGELOG.md`:
-   ```sh
-   dev/release.sh prepare 1.0.0
-   ```
-   This sets `<Version>` in `src/Anvil/Anvil.csproj`, renames `[Unreleased]` to `[v1.0.0]` with today's date, and commits. If you're on `main`, it creates a `release/v1.0.0` branch first. Push the branch, open a PR, and merge it to `main`.
-2. Tag that commit on `main` and push the tag:
-   ```sh
-   git checkout main && git pull
-   dev/release.sh tag
-   ```
-   This checks that `main` is up to date with `origin/main`, that `v1.0.0` doesn't already exist, and that `CHANGELOG.md` has a `[v1.0.0]` section, then tags and pushes.
-3. When the workflow's build job has finished, approve its publish job on the workflow run's page. The job then publishes the package and its symbols to NuGet and creates the GitHub release, with that version's CHANGELOG section as the notes.
-4. After publishing a new major (1.0.0, 2.0.0, ...), set `<PackageValidationBaselineVersion>` in `src/Anvil/Anvil.csproj` to it, in a PR to `main`. From then on `dotnet pack`, and so CI, fails on any breaking change against that release: a removed or changed public type or member. A deliberate break waits for the next major, which moves the baseline. The baseline is 1.0.0. Package validation downloads it from NuGet, so a pack needs network access to nuget.org.
+The run checks out `main`, builds and runs the net10.0 tests (CI runs the net48 tests on every PR), checks the release floor (the last tag matches `<Version>` in `src/Anvil/Anvil.csproj`, `CHANGELOG.md` has notes under `[Unreleased]`, and the increment isn't below what the synced `@anvilco/types` demands; see Versioning), then bumps the csproj, turns `[Unreleased]` into `[vX.Y.Z] - date`, commits `Release vX.Y.Z` to `main`, tags `vX.Y.Z`, creates the GitHub release with that changelog section as its notes, packs, and pushes the package and its symbols to NuGet with [trusted publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing). `dotnet pack` runs package validation against the baseline release, so a breaking change fails there, before anything is pushed. A dry run (the default) shows all of that and changes nothing; run one first.
 
-Both commands accept `--dry-run`. For a pre-release, run `dev/release.sh prepare 1.0.0-rc.1`: it bumps the version but leaves `CHANGELOG.md` alone, so the notes stay under `[Unreleased]` for the final release. Pre-releases are `1.0.0-alpha.1`, `1.0.0-beta.1` or `1.0.0-rc.1`, tagged `v1.0.0-rc.1`, and marked as pre-releases on GitHub.
-
-When testing the workflow, only publish pre-release versions. A version can't be unpublished from NuGet, only unlisted.
+After publishing a new major (2.0.0, ...), set `<PackageValidationBaselineVersion>` in `src/Anvil/Anvil.csproj` to it and delete `src/Anvil/CompatibilitySuppressions.xml`, in a PR to `main`; the run's summary says so. From then on `dotnet pack`, and so CI, fails on any breaking change against that release: a removed or changed public type or member. A deliberate break waits for the next major, which moves the baseline. The baseline is 1.0.0. Package validation downloads it from NuGet, so a pack needs network access to nuget.org.
 
 `dev/pack-smoke.sh` packs the library and installs the package into a scratch console app, which CI runs on every PR, so what gets published is exercised and not just the project reference.
 
-### Setup
-
-Done once per repository:
-
-* **The `nuget` environment.** On GitHub, under the repository's Settings > Environments, create `nuget` with required reviewers: the maintainers who may approve a publish. The publish job waits for one of them.
-* **Credentials**, one of:
-  * **NuGet trusted publishing** (preferred, no secret): on nuget.org, under the `Anvil` package owner's Trusted Publishing settings, add a policy for the `anvilco/dotnet-anvil` repository, the `publish.yml` workflow and the `nuget` environment. Then set a `NUGET_USER` repository variable to the nuget.org username that owns the policy. The workflow logs in with `NuGet/login`, which exchanges the job's OIDC token for a short-lived API key.
-  * **An API key**: a `NUGET_API_KEY` repository secret with a nuget.org API key scoped to push `Anvil`. Used when `NUGET_USER` is not set.
+Who may run a real release, the NuGet trusted publishing policy (for the `useanvil` account), and the GitHub App that pushes the release commit are set up in package-ops; its README has the details and how to add a repository.

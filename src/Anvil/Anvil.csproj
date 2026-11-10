@@ -5,7 +5,7 @@
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <!-- Bumped by dev/release.sh; the Publish workflow checks the tag matches -->
+        <!-- Bumped by the release run in anvilco/package-ops, which checks the last tag matches -->
         <Version>1.2.0</Version>
 
         <PackageId>Anvil</PackageId>
