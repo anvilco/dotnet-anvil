@@ -9,7 +9,7 @@
     "check:generated": "node generate-types.mjs && git diff --exit-code --stat -- ../src/Anvil/Types"
   },
   "dependencies": {
-    "@anvilco/types": "1.0.0",
+    "@anvilco/types": "1.1.0",
     "graphql": "^17.0.2"
   }
 }
